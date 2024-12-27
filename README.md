@@ -51,7 +51,7 @@ For first time setup on Jetson, you may need to enable Docker access for your us
 sudo usermod -aG docker $USER
 ```
 
-> Note: You may need to restart your computer for the changes to take effect.
+> Note: You may need to restart Jetson for the changes to take effect.
 
 Then, build the Docker image:
 
@@ -59,7 +59,7 @@ Then, build the Docker image:
 docker build --rm -t ardupilot-dev .
 ```
 
-Build ardusub image for Pixhawk 6C:
+Configure the build for Pixhawk 6C: (You can change the board to other supported boards, such as Pixhawk4 or sitl)
 
 ```bash
 docker run --rm -it -v $PWD:/ardupilot ardupilot-dev ./waf configure --board=Pixhawk6C
