@@ -7,32 +7,32 @@ This fork contains custom frame configs stored at [AP_Motors6DOF](libraries/AP_M
 For Kevin bot:
 
 ```cpp
-      case SUB_FRAME_CUSTOM:
-        //                 Motor #              Roll Factor     Pitch Factor    Yaw Factor      Throttle Factor     Forward Factor      Lateral Factor  Testing Order
-        // For Primary bot
-        _frame_class_string = "CUSTOM_PRIMARY";
-        add_motor_raw_6dof(AP_MOTORS_MOT_1,     0,              0,              -1.0f,          0,                  1.0f,               0,              1);
-        add_motor_raw_6dof(AP_MOTORS_MOT_2,     0,              0,              1.0f,           0,                  1.0f,               0,              2);
-        add_motor_raw_6dof(AP_MOTORS_MOT_3,     1.0f,           -1.0f,          0,              -1.0f,              0,                  -1.0f,          3);
-        add_motor_raw_6dof(AP_MOTORS_MOT_4,     -1.0f,          -1.0f,          0,              -1.0f,              0,                  1.0f,           4);
-        add_motor_raw_6dof(AP_MOTORS_MOT_5,     1.0f,           1.0f,           0,              -1.0f,              0,                  1.0f,           5);
-        add_motor_raw_6dof(AP_MOTORS_MOT_6,     -1.0f,          1.0f,           0,              -1.0f,              0,                  -1.0f,          6);
-        break;
+case SUB_FRAME_CUSTOM:
+  //                 Motor #              Roll Factor     Pitch Factor    Yaw Factor      Throttle Factor     Forward Factor      Lateral Factor  Testing Order
+  // For Primary bot
+  _frame_class_string = "CUSTOM_PRIMARY";
+  add_motor_raw_6dof(AP_MOTORS_MOT_1,     0,              0,              -1.0f,          0,                  1.0f,               0,              1);
+  add_motor_raw_6dof(AP_MOTORS_MOT_2,     0,              0,              1.0f,           0,                  1.0f,               0,              2);
+  add_motor_raw_6dof(AP_MOTORS_MOT_3,     1.0f,           -1.0f,          0,              -1.0f,              0,                  -1.0f,          3);
+  add_motor_raw_6dof(AP_MOTORS_MOT_4,     -1.0f,          -1.0f,          0,              -1.0f,              0,                  1.0f,           4);
+  add_motor_raw_6dof(AP_MOTORS_MOT_5,     1.0f,           1.0f,           0,              -1.0f,              0,                  1.0f,           5);
+  add_motor_raw_6dof(AP_MOTORS_MOT_6,     -1.0f,          1.0f,           0,              -1.0f,              0,                  -1.0f,          6);
+  break;
 ```
 
 For Lucy frame:
 
 ```cpp
-      case SUB_FRAME_SIMPLEROV_5:
-        //                 Motor #              Roll Factor     Pitch Factor    Yaw Factor      Throttle Factor     Forward Factor      Lateral Factor  Testing Order
-        // For Secondary bot
-        _frame_class_string = "CUSTOM_SECONDARY";
-        add_motor_raw_6dof(AP_MOTORS_MOT_1,     0,              0,               -1.0f,          0,                  1.0f,               0,              1);
-        add_motor_raw_6dof(AP_MOTORS_MOT_2,     0,              0,               1.0f,           0,                  1.0f,               0,              2);
-        add_motor_raw_6dof(AP_MOTORS_MOT_3,     1.0f,           -1.0f,           0,              -1.0f,              0,                  0,              3);
-        add_motor_raw_6dof(AP_MOTORS_MOT_4,     -1.0f,          -1.0f,           0,              -1.0f,              0,                  0,              4);
-        add_motor_raw_6dof(AP_MOTORS_MOT_5,     0,              1.0f,            0,              -1.0f,              0,                  0,              5);
-        break; 
+case SUB_FRAME_SIMPLEROV_5:
+  //                 Motor #              Roll Factor     Pitch Factor    Yaw Factor      Throttle Factor     Forward Factor      Lateral Factor  Testing Order
+  // For Secondary bot
+  _frame_class_string = "CUSTOM_SECONDARY";
+  add_motor_raw_6dof(AP_MOTORS_MOT_1,     0,              0,               -1.0f,          0,                  1.0f,               0,              1);
+  add_motor_raw_6dof(AP_MOTORS_MOT_2,     0,              0,               1.0f,           0,                  1.0f,               0,              2);
+  add_motor_raw_6dof(AP_MOTORS_MOT_3,     1.0f,           -1.0f,           0,              -1.0f,              0,                  0,              3);
+  add_motor_raw_6dof(AP_MOTORS_MOT_4,     -1.0f,          -1.0f,           0,              -1.0f,              0,                  0,              4);
+  add_motor_raw_6dof(AP_MOTORS_MOT_5,     0,              1.0f,            0,              -1.0f,              0,                  0,              5);
+  break; 
 ```
 
 ## Installation
