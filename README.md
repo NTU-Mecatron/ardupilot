@@ -2,6 +2,8 @@
 
 This fork contains custom frame configs stored at [AP_Motors6DOF](libraries/AP_Motors/AP_Motors6DOF.cpp) for Mecatron use.
 
+It also contains guide for running ArduSub SITL (Software In The Loop) so that you can run pixhawk package without the need of a physical pixhawk.
+
 ## Available frames
 
 For Kevin bot:
@@ -59,7 +61,13 @@ Then, build the Docker image:
 docker build --rm -t ardupilot-dev .
 ```
 
-Configure the build for Pixhawk 6C: (You can change the board to other supported boards, such as Pixhawk4 or sitl)
+If you are configuring on your own computer for SITL, run this:
+
+```bash
+docker run --rm -it -v $PWD:/ardupilot ardupilot-dev ./waf configure --board=sitl
+```
+
+If you are working with a physical Pixhawk 6C (for example, to upload firmware), run this:
 
 ```bash
 docker run --rm -it -v $PWD:/ardupilot ardupilot-dev ./waf configure --board=Pixhawk6C
@@ -72,6 +80,17 @@ Whenever you make changes to the code, you only need to run the following comman
 ```bash
 docker run --rm -it -v $PWD:/ardupilot ardupilot-dev ./waf sub
 ```
+
+## Running SITL
+
+```bash
+docker run --rm -it -v $PWD:/ardupilot ardupilot-dev sim_vehicle.py -v ArduSub --out udp:<your_ip>:14550
+```
+
+`--out` flag is used to specify the IP address and port to send the MAVLink messages to. If you are running your pixhawk package in WSL2, you need to run `ifconfig` in WSL2 to find out its IP address and use that IP address.
+If you are running the package in Docker, you might need to add `-p 14550` flag when running the container, or add the port manually, and use `127.0.0.1` as the IP address.
+
+## Uploading firmware
 
 To upload the firmware to the Pixhawk 6C (which is usually at port `/dev/ttyACM0` and `/dev/ttyACM1`), run:
 
