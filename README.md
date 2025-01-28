@@ -87,6 +87,8 @@ docker run --rm -it -v $PWD:/ardupilot ardupilot-dev ./waf sub
 docker run --rm -it -v $PWD:/ardupilot ardupilot-dev sim_vehicle.py -v ArduSub --out udp:<your_ip>:14550
 ```
 
+> Note: after following the above setup to build SITL, this is *the only command* you need to run everytime to start SITL.
+
 `--out` flag is used to specify the IP address and port to send the MAVLink messages to. If you are running your pixhawk package in WSL2, you need to run `ifconfig` in WSL2 to find out its IP address and use that IP address.
 If you are running the package in Docker, you might need to add `-p 14550` flag when running the container, or add the port manually, and use `127.0.0.1` as the IP address.
 
