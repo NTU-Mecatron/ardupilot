@@ -92,6 +92,14 @@ docker run --rm -it -v $PWD:/ardupilot ardupilot-dev sim_vehicle.py -v ArduSub -
 `--out` flag is used to specify the IP address and port to send the MAVLink messages to. If you are running your pixhawk package in WSL2, you need to run `ifconfig` in WSL2 to find out its IP address and use that IP address.
 If you are running the package in Docker, you might need to add `-p 14550` flag when running the container, or add the port manually, and use `127.0.0.1` as the IP address.
 
+If you use WSL2 (meaning on Windows), you should clone this package and run docker in WSL2 to make it faster.
+
+To launch pixhawk with SITL:
+
+```bash
+roslaunch pixhawk pixhawk.launch address:="udp:0.0.0.0:14550" voltage0_threshold:=-1 voltage1_threshold:=-1
+```
+
 ## Uploading firmware
 
 To upload the firmware to the Pixhawk 6C (which is usually at port `/dev/ttyACM0` and `/dev/ttyACM1`), run:
