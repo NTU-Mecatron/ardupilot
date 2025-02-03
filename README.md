@@ -76,7 +76,9 @@ To upload the parameter file to the Pixhawk 6C, run:
 ```bash
 mavproxy.py
 param load <absolute_path_to_pix6c.parm>
+reboot
 ```
+If it throws an error "Unable to find parameter RELAY10_PIN", this is because it is a hidden parameter that only appears after you set the RELAY10_FUNCTION to something other than 0. To fix, you need to unplug and replug the Pixhawk (or reboot the Jetson) and try again.
 
 ## Running SITL
 
