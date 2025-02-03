@@ -10,6 +10,7 @@ However, if you do not intend to run SITL (simulation), ignore all SITL related 
 - [Setup for the first time build](#setup-for-the-first-time-build)
 - [Subsequent builds](#subsequent-builds)
 - [Uploading firmware](#uploading-firmware)
+- [Uploading parameters](#uploading-parameters)
 - [Running SITL](#running-sitl)
 - [Available frames](#available-frames)
 
