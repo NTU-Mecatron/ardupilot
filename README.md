@@ -79,10 +79,10 @@ If you are running the package in Docker, you might need to add `-p 14550` flag 
 
 If you use WSL2 (meaning on Windows), you should clone this package and run docker in WSL2 to make it faster.
 
-To launch pixhawk with SITL:
+To launch pixhawk with SITL, there is no change from how you typically run it:
 
 ```bash
-roslaunch pixhawk pixhawk.launch address:="udp:0.0.0.0:14550" voltage0_threshold:=-1 voltage1_threshold:=-1
+roslaunch pixhawk pixhawk.launch
 ```
 
 ## Available frames
