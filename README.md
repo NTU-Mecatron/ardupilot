@@ -66,6 +66,17 @@ To upload the firmware to the Pixhawk 6C (which is usually at port `/dev/ttyACM0
 docker run --rm -it --privileged -v $PWD:/ardupilot ardupilot-dev ./waf --upload-port="/dev/ttyACM0" --upload sub
 ```
 
+## Uploading parameters
+
+We have created a parameter file [pix6c.parm](pix6c.parm) for custom use at Mecatron. This parameter file is working on the assumption that pin 1 for gimbal, pin 2 for marker, pin 3 for torpedo, pin 4 for gripper. Meaning pin 1 and 4 are pwm style, while pin 2 and 3 are relay style.
+
+To upload the parameter file to the Pixhawk 6C, run:
+
+```bash
+mavproxy.py
+param load <absolute_path_to_pix6c.parm>
+```
+
 ## Running SITL
 
 ```bash
