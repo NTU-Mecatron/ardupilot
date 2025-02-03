@@ -3,6 +3,87 @@
 This fork contains custom frame configs stored at [AP_Motors6DOF](libraries/AP_Motors/AP_Motors6DOF.cpp) for Mecatron use.
 
 It also contains guide for running ArduSub SITL (Software In The Loop) so that you can run pixhawk package without the need of a physical pixhawk.
+However, if you do not intend to run SITL (simulation), ignore all SITL related commands and just follow the firmware build and upload guide.
+
+**Table of Contents**
+- [Installation](#installation)
+- [Setup for the first time build](#setup-for-the-first-time-build)
+- [Subsequent builds](#subsequent-builds)
+- [Uploading firmware](#uploading-firmware)
+- [Running SITL](#running-sitl)
+- [Available frames](#available-frames)
+
+## Installation
+
+```bash
+cd ~/
+git clone --recursive -b Sub-4.5 https://github.com/NTU-Mecatron/ardupilot.git
+cd ardupilot
+```
+
+## Setup for the first time build
+
+For first time setup on Jetson, you may need to enable Docker access for your user:
+
+```bash
+sudo usermod -aG docker $USER
+```
+
+> Note: You may need to restart Jetson for the changes to take effect.
+
+Build the Docker image:
+
+```bash
+docker build --rm -t ardupilot-dev .
+```
+
+After that, run **either** of the following commands to configure the build:
+**
+
+```bash
+# If you are configuring on your own computer for SITL
+docker run --rm -it -v $PWD:/ardupilot ardupilot-dev ./waf configure --board=sitl
+
+# If you are working with a physical Pixhawk 6C (for example, to upload firmware)
+docker run --rm -it -v $PWD:/ardupilot ardupilot-dev ./waf configure --board=Pixhawk6C
+```
+
+## Subsequent builds
+
+Whenever you make changes to the code, you only need to run the following command to build the firmware (if you already followed the setup above):
+
+```bash
+# The above command is only for configuring the build
+# You need to run this command to actually build it
+docker run --rm -it -v $PWD:/ardupilot ardupilot-dev ./waf sub
+```
+
+## Uploading firmware
+
+To upload the firmware to the Pixhawk 6C (which is usually at port `/dev/ttyACM0` and `/dev/ttyACM1`), run:
+
+```bash
+docker run --rm -it --privileged -v $PWD:/ardupilot ardupilot-dev ./waf --upload-port="/dev/ttyACM0" --upload sub
+```
+
+## Running SITL
+
+```bash
+docker run --rm -it -v $PWD:/ardupilot ardupilot-dev sim_vehicle.py -v ArduSub --out udp:<your_ip>:14550
+```
+
+> Note: after following the above setup to build SITL, this is *the only command* you need to run everytime to start SITL.
+
+`--out` flag is used to specify the IP address and port to send the MAVLink messages to. If you are running your pixhawk package in WSL2, you need to run `ifconfig` in WSL2 to find out its IP address and use that IP address.
+If you are running the package in Docker, you might need to add `-p 14550` flag when running the container, or add the port manually, and use `127.0.0.1` as the IP address.
+
+If you use WSL2 (meaning on Windows), you should clone this package and run docker in WSL2 to make it faster.
+
+To launch pixhawk with SITL:
+
+```bash
+roslaunch pixhawk pixhawk.launch address:="udp:0.0.0.0:14550" voltage0_threshold:=-1 voltage1_threshold:=-1
+```
 
 ## Available frames
 
@@ -35,75 +116,4 @@ case SUB_FRAME_SIMPLEROV_5:
   add_motor_raw_6dof(AP_MOTORS_MOT_4,     -1.0f,          -1.0f,           0,              -1.0f,              0,                  0,              4);
   add_motor_raw_6dof(AP_MOTORS_MOT_5,     0,              1.0f,            0,              -1.0f,              0,                  0,              5);
   break; 
-```
-
-## Installation
-
-```bash
-cd ~/
-git clone --recursive -b Sub-4.5 https://github.com/NTU-Mecatron/ardupilot.git
-cd ardupilot
-```
-
-## Setup for the first time build
-
-For first time setup on Jetson, you may need to enable Docker access for your user:
-
-```bash
-sudo usermod -aG docker $USER
-```
-
-> Note: You may need to restart Jetson for the changes to take effect.
-
-Then, build the Docker image:
-
-```bash
-docker build --rm -t ardupilot-dev .
-```
-
-If you are configuring on your own computer for SITL, run this:
-
-```bash
-docker run --rm -it -v $PWD:/ardupilot ardupilot-dev ./waf configure --board=sitl
-```
-
-If you are working with a physical Pixhawk 6C (for example, to upload firmware), run this:
-
-```bash
-docker run --rm -it -v $PWD:/ardupilot ardupilot-dev ./waf configure --board=Pixhawk6C
-```
-
-## Subsequent builds
-
-Whenever you make changes to the code, you only need to run the following command to build the firmware (if you already followed the setup above):
-
-```bash
-docker run --rm -it -v $PWD:/ardupilot ardupilot-dev ./waf sub
-```
-
-## Running SITL
-
-```bash
-docker run --rm -it -v $PWD:/ardupilot ardupilot-dev sim_vehicle.py -v ArduSub --out udp:<your_ip>:14550
-```
-
-> Note: after following the above setup to build SITL, this is *the only command* you need to run everytime to start SITL.
-
-`--out` flag is used to specify the IP address and port to send the MAVLink messages to. If you are running your pixhawk package in WSL2, you need to run `ifconfig` in WSL2 to find out its IP address and use that IP address.
-If you are running the package in Docker, you might need to add `-p 14550` flag when running the container, or add the port manually, and use `127.0.0.1` as the IP address.
-
-If you use WSL2 (meaning on Windows), you should clone this package and run docker in WSL2 to make it faster.
-
-To launch pixhawk with SITL:
-
-```bash
-roslaunch pixhawk pixhawk.launch address:="udp:0.0.0.0:14550" voltage0_threshold:=-1 voltage1_threshold:=-1
-```
-
-## Uploading firmware
-
-To upload the firmware to the Pixhawk 6C (which is usually at port `/dev/ttyACM0` and `/dev/ttyACM1`), run:
-
-```bash
-docker run --rm -it --privileged -v $PWD:/ardupilot ardupilot-dev ./waf --upload-port="/dev/ttyACM0" --upload sub
 ```
