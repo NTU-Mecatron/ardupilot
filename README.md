@@ -1,17 +1,21 @@
 # Ardupilot fork by Mecatron
 
-This fork contains custom frame configs stored at [AP_Motors6DOF](libraries/AP_Motors/AP_Motors6DOF.cpp) for Mecatron use.
-
-It also contains guide for running ArduSub SITL (Software In The Loop) so that you can run pixhawk package without the need of a physical pixhawk.
-However, if you do not intend to run SITL (simulation), ignore all SITL related commands and just follow the firmware build and upload guide.
+> While `Sub-4.5` is the default branch, the other two active branches are `Rover-4.5` and `Copter-4.5`. Please refer to those branches for specific instructions.
 
 **Table of Contents**
 - [Installation](#installation)
-- [Build natively](#build-natively) (RECOMMENDED)
-- [Build with Docker](#build-with-docker)
-- [Uploading firmware](#uploading-firmware)
-- [Uploading parameters](#uploading-parameters)
+- [Build](#build)
+  - [Build natively (RECOMMENDED)](#build-natively-recommended)
+  - [Build with Docker (only encouraged for Jetson use to upload firmware, not any other use cases)](#build-with-docker-only-encouraged-for-jetson-use-to-upload-firmware-not-any-other-use-cases)
+    - [Setup for the first time build](#setup-for-the-first-time-build)
+    - [Subsequent builds](#subsequent-builds)
+    - [Uploading firmware](#uploading-firmware)
 - [Running SITL](#running-sitl)
+  - [Native SITL (No JSON backend)](#native-sitl-no-json-backend)
+  - [JSON SITL (With JSON backend)](#json-sitl-with-json-backend-such-as-unitymds)
+- [Setting parameters](#setting-parameters)
+  - [Setting simple parameters](#setting-simple-parameters)
+  - [Uploading entire parameter files](#uploading-entire-parameter-files)
 - [Available frames](#available-frames)
 
 ## Installation
@@ -28,7 +32,8 @@ git clone --recursive -b Sub-4.5 https://github.com/NTU-Mecatron/ardupilot.git s
 cd sub-4.5
 ```
 
-## Build natively (RECOMMENDED)
+## Build
+### Build natively (RECOMMENDED)
 
 Instructions are extracted from [Setting up the Build Environment (Linux/Ubuntu)](https://ardupilot.org/dev/docs/building-setup-linux.html#building-setup-linux):
 
@@ -42,9 +47,9 @@ Then, configure the build for Software-In-The-Loop:
 ./waf configure --board=sitl && ./waf sub
 ```
 
-## Build with Docker (only encouraged for Jetson use to upload firmware, not any other use cases)
+### Build with Docker (only encouraged for Jetson use to upload firmware, not any other use cases)
 
-### Setup for the first time build
+#### Setup for the first time build
 
 For first time setup on Jetson, you may need to enable Docker access for your user:
 
@@ -74,7 +79,7 @@ docker run --rm -it -v $PWD:/ardupilot ardupilot-dev ./waf configure --board=Pix
 
 > Run `docker run --rm -it -v $PWD:/ardupilot ardupilot-dev ./waf list_boards` to see the list of supported boards.
 
-### Subsequent builds
+#### Subsequent builds
 
 Whenever you make changes to the code, you only need to run the following command to build the firmware (if you already followed the setup above):
 
@@ -84,7 +89,7 @@ Whenever you make changes to the code, you only need to run the following comman
 docker run --rm -it -v $PWD:/ardupilot ardupilot-dev ./waf sub
 ```
 
-### Uploading firmware
+#### Uploading firmware
 
 To upload the firmware to the Pixhawk 6C (which is usually at port `/dev/ttyACM0` and `/dev/ttyACM1`), run:
 
@@ -92,34 +97,18 @@ To upload the firmware to the Pixhawk 6C (which is usually at port `/dev/ttyACM0
 docker run --rm -it --privileged -v $PWD:/ardupilot ardupilot-dev ./waf --upload-port="/dev/ttyACM0" --upload sub
 ```
 
-## Uploading parameters
-
-We have created a parameter file [pix6c.parm](params/pix6c.parm) for custom use at Mecatron. This parameter file is working on the assumption that pin 1 for gimbal, pin 2 for marker, pin 3 for torpedo, pin 4 for gripper. Meaning pin 1 and 4 are pwm style, while pin 2 and 3 are relay style.
-
-To upload the parameter file to the Pixhawk 6C, run:
-
-```bash
-mavproxy.py
-param load <absolute_path_to_pix6c.parm>
-reboot
-```
-
-> Note: You may need to add `--master=udp:<ip_address>:<port>` if you are using UDP connection, or `--master=/dev/ttyACM0` if you are using serial connection.
-
-If it throws an error "Unable to find parameter RELAY10_PIN", this is because it is a hidden parameter that only appears after you set the RELAY10_FUNCTION to something other than 0. To fix, you need to unplug and replug the Pixhawk (or reboot the Jetson) and try again.
-
 ## Running SITL
 
-First, navigate to the ardupilot folder (else, do your own relative paths for the below instructions):
+First, navigate to the root of the repo:
 ```bash
-cd ~/ardupilot
+cd ~/ardupilot/sub-4.5
 ```
 Please grant access to all the scripts below by running `chmod +x <script_path>` once. Feel free to edit the scripts to modify the IP address and port if needed.
 
 ### Native SITL (No JSON backend)
 
 ```bash
-./sub-4.5/run_sitl_native.sh
+./run_sitl_native.sh
 ```
 
 ### JSON SITL (With JSON backend such as UnityMDS)
@@ -133,15 +122,34 @@ echo 'export AP_JSON_IP=<JSON_BACKEND_IP_ADDRESS>' >> ~/.profile && source ~/.pr
 
 Then run the JSON backend and the SITL instance: (order doesn't matter)
 ```bash
-./sub-4.5/run_sitl_json.sh
+./run_sitl_json.sh
 ```
 
 > Note: Remember to enable all firewall rules with Unity if using Windows.
 
-### Some explanations
+## Setting parameters
 
-`--out` flag is used to specify the IP address and port to send the MAVLink messages to. If you are running your pixhawk package in WSL2, you need to run `ifconfig` in WSL2 to find out its IP address and use that IP address.
-If you are running the package in Docker, you might need to add `-p 14550` flag when running the container, or add the port manually, and use `127.0.0.1` as the IP address.
+You can set parameters either by setting individual parameters or uploading entire parameter files.
+
+### Setting simple parameters
+
+To run the example `Kevin bot` inside `UnityMDS`, you need to set its frame config. Run this in the interactive terminal:
+
+```bash
+param set FRAME_CONFIG 7
+reboot
+```
+
+### Uploading entire parameter files
+
+You can refer to example parameter files in the `params/` folder and read up their definitions on official Ardupilot documentation.
+
+To upload entire parameter files, run the following command in the interactive terminal. For example, to test with no-GPS underwater (using DVL):
+
+```bash
+param load params/no_gps_ext_nav.parm
+reboot
+```
 
 ## Available frames
 
