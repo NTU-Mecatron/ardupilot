@@ -103,6 +103,13 @@ First, navigate to the root of the repo:
 ```bash
 cd ~/ardupilot/sub-4.5
 ```
+
+Running SITL script from the root of the repo is extremely important. As extracted from Ardupilot:
+
+```
+eeprom.bin in the starting directory contains the parameters for your simulated vehicle. Always start from the same directory. It is recommended that you start in the main vehicle directory for the vehicle you are simulating, for example, start in the ArduPlane directory to simulate ArduPlane
+```
+
 Please grant access to all the scripts below by running `chmod +x <script_path>` once. Feel free to edit the scripts to modify the IP address and port if needed.
 
 ### Native SITL (No JSON backend)
