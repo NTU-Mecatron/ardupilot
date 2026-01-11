@@ -1,161 +1,186 @@
-# ArduPilot Project
+# Ardupilot fork by Mecatron
 
-<a href="https://ardupilot.org/discord"><img src="https://img.shields.io/discord/674039678562861068.svg" alt="Discord">
+> This is the `Copter-4.5` branch. For `Sub-4.5` and `Rover-4.5`, please refer to their respective branches.
 
-[![Test Copter](https://github.com/ArduPilot/ardupilot/workflows/test%20copter/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_sitl_copter.yml) [![Test Plane](https://github.com/ArduPilot/ardupilot/workflows/test%20plane/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_sitl_plane.yml) [![Test Rover](https://github.com/ArduPilot/ardupilot/workflows/test%20rover/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_sitl_rover.yml) [![Test Sub](https://github.com/ArduPilot/ardupilot/workflows/test%20sub/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_sitl_sub.yml) [![Test Tracker](https://github.com/ArduPilot/ardupilot/workflows/test%20tracker/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_sitl_tracker.yml)
+**Table of Contents**
+- [Installation](#installation)
+- [Build](#build)
+  - [Build natively (RECOMMENDED)](#build-natively-recommended)
+  - [Build with Docker (only encouraged for Jetson use to upload firmware, not any other use cases)](#build-with-docker-only-encouraged-for-jetson-use-to-upload-firmware-not-any-other-use-cases)
+    - [Setup for the first time build](#setup-for-the-first-time-build)
+    - [Subsequent builds](#subsequent-builds)
+    - [Uploading firmware](#uploading-firmware)
+- [Running SITL](#running-sitl)
+  - [Native SITL (No JSON backend)](#native-sitl-no-json-backend)
+  - [JSON SITL (With JSON backend)](#json-sitl-with-json-backend-such-as-unitymds)
+  - [JSON SITL multiple vehicles](#json-sitl-multiple-vehicles)
+- [Setting parameters](#setting-parameters)
+  - [Setting simple parameters](#setting-simple-parameters)
+  - [Uploading entire parameter files](#uploading-entire-parameter-files)
 
-[![Test AP_Periph](https://github.com/ArduPilot/ardupilot/workflows/test%20ap_periph/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_sitl_periph.yml) [![Test Chibios](https://github.com/ArduPilot/ardupilot/workflows/test%20chibios/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_chibios.yml) [![Test Linux SBC](https://github.com/ArduPilot/ardupilot/workflows/test%20Linux%20SBC/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_linux_sbc.yml) [![Test Replay](https://github.com/ArduPilot/ardupilot/workflows/test%20replay/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_replay.yml)
+## Installation
 
-[![Test Unit Tests](https://github.com/ArduPilot/ardupilot/workflows/test%20unit%20tests/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_unit_tests.yml) [![test size](https://github.com/ArduPilot/ardupilot/actions/workflows/test_size.yml/badge.svg)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_size.yml)
+Create a general folder if you have not done so:
+```bash
+mkdir ~/ardupilot
+```
 
-[![Test Environment Setup](https://github.com/ArduPilot/ardupilot/actions/workflows/test_environment.yml/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_environment.yml)
+Clone the repository:
+```bash
+cd ~/ardupilot
+git clone --recursive -b Copter-4.5 https://github.com/NTU-Mecatron/ardupilot.git copter-4.5
+cd copter-4.5
+```
 
-[![Cygwin Build](https://github.com/ArduPilot/ardupilot/actions/workflows/cygwin_build.yml/badge.svg)](https://github.com/ArduPilot/ardupilot/actions/workflows/cygwin_build.yml) [![Macos Build](https://github.com/ArduPilot/ardupilot/actions/workflows/macos_build.yml/badge.svg)](https://github.com/ArduPilot/ardupilot/actions/workflows/macos_build.yml)
+## Build
+### Build natively (RECOMMENDED)
 
-[![Coverity Scan Build Status](https://scan.coverity.com/projects/5331/badge.svg)](https://scan.coverity.com/projects/ardupilot-ardupilot)
+Instructions are extracted from [Setting up the Build Environment (Linux/Ubuntu)](https://ardupilot.org/dev/docs/building-setup-linux.html#building-setup-linux):
 
-[![Test Coverage](https://github.com/ArduPilot/ardupilot/actions/workflows/test_coverage.yml/badge.svg?branch=master)](https://github.com/ArduPilot/ardupilot/actions/workflows/test_coverage.yml)
+```
+Tools/environment_install/install-prereqs-ubuntu.sh -y
+```
 
-[![Autotest Status](https://autotest.ardupilot.org/autotest-badge.svg)](https://autotest.ardupilot.org/)
+Then, configure the build for Software-In-The-Loop:
 
-ArduPilot is the most advanced, full-featured, and reliable open source autopilot software available.
-It has been under development since 2010 by a diverse team of professional engineers, computer scientists, and community contributors.
-Our autopilot software is capable of controlling almost any vehicle system imaginable, from conventional airplanes, quad planes, multi-rotors, and helicopters to rovers, boats, balance bots, and even submarines.
-It is continually being expanded to provide support for new emerging vehicle types.
+```bash
+./waf configure --board=sitl && ./waf copter
+```
 
-## The ArduPilot project is made up of: ##
+### Build with Docker (only encouraged for Jetson use to upload firmware, not any other use cases)
 
-- ArduCopter: [code](https://github.com/ArduPilot/ardupilot/tree/master/ArduCopter), [wiki](https://ardupilot.org/copter/index.html)
+#### Setup for the first time build
 
-- ArduPlane: [code](https://github.com/ArduPilot/ardupilot/tree/master/ArduPlane), [wiki](https://ardupilot.org/plane/index.html)
+For first time setup on Jetson, you may need to enable Docker access for your user:
 
-- Rover: [code](https://github.com/ArduPilot/ardupilot/tree/master/Rover), [wiki](https://ardupilot.org/rover/index.html)
+```bash
+sudo usermod -aG docker $USER
+```
 
-- ArduSub : [code](https://github.com/ArduPilot/ardupilot/tree/master/ArduSub), [wiki](http://ardusub.com/)
+> Note: You may need to restart Jetson for the changes to take effect.
 
-- Antenna Tracker : [code](https://github.com/ArduPilot/ardupilot/tree/master/AntennaTracker), [wiki](https://ardupilot.org/antennatracker/index.html)
+Go to the root of the repo:
 
-## User Support & Discussion Forums ##
+```bash
+cd ~/ardupilot/copter-4.5
+```
 
-- Support Forum: <https://discuss.ardupilot.org/>
+Build the Docker image:
 
-- Community Site: <https://ardupilot.org>
+```bash
+docker build --rm -t ardupilot-dev .
+```
 
-## Developer Information ##
+Configure the build:
 
-- Github repository: <https://github.com/ArduPilot/ardupilot>
+```bash
+docker run --rm -it -v $PWD:/ardupilot ardupilot-dev ./waf configure --board=Pixhawk6C
+```
 
-- Main developer wiki: <https://ardupilot.org/dev/>
+> Run `docker run --rm -it -v $PWD:/ardupilot ardupilot-dev ./waf list_boards` to see the list of supported boards.
 
-- Developer discussion: <https://discuss.ardupilot.org>
+#### Subsequent builds
 
-- Developer chat: <https://discord.com/channels/ardupilot>
+Whenever you make changes to the code, you only need to run the following command to build the firmware (if you already followed the setup above):
 
-## Top Contributors ##
+```bash
+# The above command is only for configuring the build
+# You need to run this command to actually build it
+docker run --rm -it -v $PWD:/ardupilot ardupilot-dev ./waf copter
+```
 
-- [Flight code contributors](https://github.com/ArduPilot/ardupilot/graphs/contributors)
-- [Wiki contributors](https://github.com/ArduPilot/ardupilot_wiki/graphs/contributors)
-- [Most active support forum users](https://discuss.ardupilot.org/u?order=post_count&period=quarterly)
-- [Partners who contribute financially](https://ardupilot.org/about/Partners)
+#### Uploading firmware
 
-## How To Get Involved ##
+To upload the firmware to the Pixhawk 6C (which is usually at port `/dev/ttyACM0` and `/dev/ttyACM1`), run:
 
-- The ArduPilot project is open source and we encourage participation and code contributions: [guidelines for contributors to the ardupilot codebase](https://ardupilot.org/dev/docs/contributing.html)
+```bash
+docker run --rm -it --privileged -v $PWD:/ardupilot ardupilot-dev ./waf --upload-port="/dev/ttyACM0" --upload copter
+```
 
-- We have an active group of Beta Testers to help us improve our code: [release procedures](https://ardupilot.org/dev/docs/release-procedures.html)
+## Running SITL
 
-- Desired Enhancements and Bugs can be posted to the [issues list](https://github.com/ArduPilot/ardupilot/issues).
+First, navigate to the root of the repo:
+```bash
+cd ~/ardupilot/copter-4.5
+```
 
-- Help other users with log analysis in the [support forums](https://discuss.ardupilot.org/)
+Running SITL script from the root of the repo is extremely important. As extracted from Ardupilot:
 
-- Improve the wiki and chat with other [wiki editors on Discord #documentation](https://discord.com/channels/ardupilot)
+```
+eeprom.bin in the starting directory contains the parameters for your simulated vehicle. Always start from the same directory. It is recommended that you start in the main vehicle directory for the vehicle you are simulating, for example, start in the ArduPlane directory to simulate ArduPlane
+```
 
-- Contact the developers on one of the [communication channels](https://ardupilot.org/copter/docs/common-contact-us.html)
+Please grant access to all the scripts below by running `chmod +x <script_path>` once. Feel free to edit the scripts to modify the IP address and port if needed.
 
-## License ##
+### Native SITL (No JSON backend)
 
-The ArduPilot project is licensed under the GNU General Public
-License, version 3.
+```bash
+./run_sitl_native.sh
+```
 
-- [Overview of license](https://ardupilot.org/dev/docs/license-gplv3.html)
+### JSON SITL (With JSON backend such as UnityMDS)
 
-- [Full Text](https://github.com/ArduPilot/ardupilot/blob/master/COPYING.txt)
+You will need to set the environment variable `AP_JSON_IP` to the IP address of the JSON backend server in the `.profile` file. This IP address is where the JSON backend is running (e.g. UnityMDS). If Linux, it should be `127.0.0.1`. If Windows, it should be the Windows WSL2 IP address (usually something like `172.x.x.x`).
 
-## Maintainers ##
+Replace `<JSON_BACKEND_IP_ADDRESS>` with the actual IP address of your JSON backend server and run the following command:
+```bash
+echo 'export AP_JSON_IP=<JSON_BACKEND_IP_ADDRESS>' >> ~/.profile && source ~/.profile
+```
 
-ArduPilot is comprised of several parts, vehicles and boards. The list below
-contains the people that regularly contribute to the project and are responsible
-for reviewing patches on their specific area.
+Then run the JSON backend and the SITL instance: (order doesn't matter)
+```bash
+./run_sitl_json.sh
+```
 
-- [Andrew Tridgell](https://github.com/tridge):
-  - ***Vehicle***: Plane, AntennaTracker
-  - ***Board***: Pixhawk, Pixhawk2, PixRacer
-- [Francisco Ferreira](https://github.com/oxinarf):
-  - ***Bug Master***
-- [Grant Morphett](https://github.com/gmorph):
-  - ***Vehicle***: Rover
-- [Willian Galvani](https://github.com/williangalvani):
-  - ***Vehicle***: Sub
-- [Lucas De Marchi](https://github.com/lucasdemarchi):
-  - ***Subsystem***: Linux
-- [Michael du Breuil](https://github.com/WickedShell):
-  - ***Subsystem***: Batteries
-  - ***Subsystem***: GPS
-  - ***Subsystem***: Scripting
-- [Peter Barker](https://github.com/peterbarker):
-  - ***Subsystem***: DataFlash, Tools
-- [Randy Mackay](https://github.com/rmackay9):
-  - ***Vehicle***: Copter, Rover, AntennaTracker
-- [Siddharth Purohit](https://github.com/bugobliterator):
-  - ***Subsystem***: CAN, Compass
-  - ***Board***: Cube*
-- [Tom Pittenger](https://github.com/magicrub):
-  - ***Vehicle***: Plane
-- [Bill Geyer](https://github.com/bnsgeyer):
-  - ***Vehicle***: TradHeli
-- [Emile Castelnuovo](https://github.com/emilecastelnuovo):
-  - ***Board***: VRBrain
-- [Georgii Staroselskii](https://github.com/staroselskii):
-  - ***Board***: NavIO
-- [Gustavo José de Sousa](https://github.com/guludo):
-  - ***Subsystem***: Build system
-- [Julien Beraud](https://github.com/jberaud):
-  - ***Board***: Bebop & Bebop 2
-- [Leonard Hall](https://github.com/lthall):
-  - ***Subsystem***: Copter attitude control and navigation
-- [Matt Lawrence](https://github.com/Pedals2Paddles):
-  - ***Vehicle***: 3DR Solo & Solo based vehicles
-- [Matthias Badaire](https://github.com/badzz):
-  - ***Subsystem***: FRSky
-- [Mirko Denecke](https://github.com/mirkix):
-  - ***Board***: BBBmini, BeagleBone Blue, PocketPilot
-- [Paul Riseborough](https://github.com/priseborough):
-  - ***Subsystem***: AP_NavEKF2
-  - ***Subsystem***: AP_NavEKF3
-- [Víctor Mayoral Vilches](https://github.com/vmayoral):
-  - ***Board***: PXF, Erle-Brain 2, PXFmini
-- [Amilcar Lucas](https://github.com/amilcarlucas):
-  - ***Subsystem***: Marvelmind
-- [Samuel Tabor](https://github.com/samuelctabor):
-  - ***Subsystem***: Soaring/Gliding
-- [Henry Wurzburg](https://github.com/Hwurzburg):
-  - ***Subsystem***: OSD
-  - ***Site***: Wiki
-- [Peter Hall](https://github.com/IamPete1):
-  - ***Vehicle***: Tailsitters
-  - ***Vehicle***: Sailboat
-  - ***Subsystem***: Scripting
-- [Andy Piper](https://github.com/andyp1per):
-  - ***Subsystem***: Crossfire
-  - ***Subsystem***: ESC
-  - ***Subsystem***: OSD
-  - ***Subsystem***: SmartAudio
-- [Alessandro Apostoli ](https://github.com/yaapu):
-  - ***Subsystem***: Telemetry
-  - ***Subsystem***: OSD
-- [Rishabh Singh ](https://github.com/rishabsingh3003):
-  - ***Subsystem***: Avoidance/Proximity
-- [David Bussenschutt ](https://github.com/davidbuzz):
-  - ***Subsystem***: ESP32,AP_HAL_ESP32
-- [Charles Villard ](https://github.com/Silvanosky):
-  - ***Subsystem***: ESP32,AP_HAL_ESP32
+> Note: Remember to enable all firewall rules with Unity if using Windows.
+
+> Note: You must set the correct vehicle frame for it to run properly. Refer to Section [Setting parameters](#setting-simple-parameters).
+
+### JSON SITL multiple vehicles
+
+Ardupilot supports running multiple SITL instances, each with different SITL and GCS ports depending on instance id. When you execute `./run_sitl_json.sh`, the default instance id is `0`, corresponding to SITL port `9002` and GCS port `14550`. Port number auto-increments by `10` for each instance id increment. For example, instance id `1` corresponds to SITL port `9012` and GCS port `14560`.
+
+To run the first vehicle, change the ports in UnityMDS to `9002` and:
+```bash
+cd ~/ardupilot/<your-vehicle-type>
+./run_sitl_json.sh -I 0
+```
+
+To run the second vehicle, change the ports in UnityMDS to `9012` and:
+```bash
+cd ~/ardupilot/<your-vehicle-type>
+./run_sitl_json.sh -I 1
+```
+
+You can monitor multiple vehicles with QGroundControl by adding multiple UDP links with ports `14550`, `14560`, etc. The steps are as follows:
+
+1. Open QGroundControl. Click on the `logo` on the top left -> `Application Settings` -> `Comm Links`.
+2. Under `Links`, add a new link with the following settings:
+   - Link Type: UDP
+   - Listening Port: `14550` (for the first vehicle), `14560` (for the second vehicle), etc.
+3. Choose `autoconnect` and click save.
+
+## Setting parameters
+
+You can set parameters either by setting individual parameters or uploading entire parameter files.
+
+### Setting simple parameters
+
+For typical `Quad-X` frame, you must set correct frame configuration:
+
+```bash
+param set FRAME_CLASS 1
+param set FRAME_TYPE 1
+reboot
+```
+
+### Uploading entire parameter files
+
+You can refer to example parameter files in the `params/` folder and read up their definitions on official Ardupilot documentation.
+
+To upload entire parameter files, run the following command in the interactive terminal. For example, to test with no-GPS navigation:
+
+```bash
+param load params/no_gps_ext_nav.parm
+reboot
+```
