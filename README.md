@@ -17,6 +17,7 @@
 - [Setting parameters](#setting-parameters)
   - [Setting simple parameters](#setting-simple-parameters)
   - [Uploading entire parameter files](#uploading-entire-parameter-files)
+- [Common issues](#common-issues)
 
 ## Installation
 
@@ -184,3 +185,21 @@ To upload entire parameter files, run the following command in the interactive t
 param load params/no_gps_ext_nav.parm
 reboot
 ```
+
+## Common issues
+
+### Arming checks
+
+There are many arming checks in the ArduPilot ecosystem designed to keep you safe; you can read more about them at [Pre-Arm Safety Checks](https://ardupilot.org/copter/docs/common-prearm-safety-checks.html). These issues happen more frequently in simulation because we cannot calibrate the vehicles. However, this should only happen upon initialization when the FC (flight controller) expects data differently from what is sent by the simulator.
+
+#### Recommended solution: Wait
+
+That's right! Wait for a bit for everything to return back to normal. You should wait for up to 2 minutes.
+
+#### Disable arming checks
+
+You should go to `QGroundControl` and manually disable one by one, and only the issues that keep popping up. It is perhaps not recommended to disable everything because the vehicle may exhibit unexpected behaviors.
+
+### Other issues
+
+We continually update this documentation. Please let us know asap, cheers!
