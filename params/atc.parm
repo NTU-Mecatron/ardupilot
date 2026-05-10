@@ -4,6 +4,8 @@
 # Some non-default params
 # ATC_RAT_PIT_D (default 0.00, range 0.00-0.02)
 # ATC_RAT_PIT_P (default 0.135, range 0.00-0.30)
+# ATC_ANG_YAW_P (default 6.00, range 0.00-6.00)
+# ATC_RAT_YAW_I (default 0.018, range 0.00-0.05)
 ATC_RAT_PIT_D    0.01
 ATC_RAT_PIT_D_FF 0.0
 ATC_RAT_PIT_FF   0.0
@@ -41,7 +43,7 @@ ATC_RAT_YAW_FF   0.0
 ATC_RAT_YAW_FLTD 5.0
 ATC_RAT_YAW_FLTE 0.0
 ATC_RAT_YAW_FLTT 5.0
-ATC_RAT_YAW_I    0.018
+ATC_RAT_YAW_I    0.0
 ATC_RAT_YAW_IMAX 0.222
 ATC_RAT_YAW_NEF  0.0
 ATC_RAT_YAW_NTF  0.0
@@ -51,4 +53,4 @@ ATC_RAT_YAW_SMAX 0.0
 
 ATC_ANG_PIT_P    6.0
 ATC_ANG_RLL_P    6.0
-ATC_ANG_YAW_P    6.0
+ATC_ANG_YAW_P    4.0
