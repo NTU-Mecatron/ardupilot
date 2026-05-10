@@ -15,7 +15,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Calculate port and sysid based on instance
-OUT_PORT=$((14550 + INSTANCE * 10))
+OUT_PORT=$((14555 + INSTANCE * 10))
 SYSID=$((1 + INSTANCE))
 
 # Check if sim_vehicle.py exists
