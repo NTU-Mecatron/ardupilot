@@ -1,6 +1,9 @@
 # Vectored 6-DOF configuration
 FRAME_CONFIG        2
-JS_GAIN_DEFAULT     0.5
+
+JS_GAIN_DEFAULT     0.75
+JS_THR_GAIN         0.5
+
 MOT_PWM_MAX         1750
 MOT_PWM_MIN         1250
 
