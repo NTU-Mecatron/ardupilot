@@ -70,7 +70,7 @@ cd ~/ardupilot/sub-4.5
 Build the Docker image:
 
 ```bash
-docker build --rm -t ardupilot-dev .
+docker build -t ardupilot-dev .
 ```
 
 Configure the build:
