@@ -26,4 +26,4 @@ if [ ! -f "Tools/autotest/sim_vehicle.py" ]; then
     exit 1
 fi
 
-python3 Tools/autotest/sim_vehicle.py -v ArduSub --model JSON:${AP_JSON_IP:-127.0.0.1} --out udp:127.0.0.1:$OUT_PORT -L SGMarinaBarrage --add-param-file=params/sitl_json.parm -I $INSTANCE --sysid $SYSID --mavproxy-args="--streamrate=-1"
+python3 Tools/autotest/sim_vehicle.py -v ArduSub --model JSON:${AP_JSON_IP:-127.0.0.1} --out udp:127.0.0.1:$OUT_PORT --out udp:127.0.0.1:14550 -L SGMarinaBarrage --add-param-file=params/sitl_json.parm -I $INSTANCE --sysid $SYSID --mavproxy-args="--streamrate=-1"
