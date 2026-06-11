@@ -35,7 +35,7 @@ cd sub-4.5
 ```
 
 ## Build
-### Build natively (RECOMMENDED)
+### Build natively (NOT RECOMMENDED ANYMORE)
 
 Instructions are extracted from [Setting up the Build Environment (Linux/Ubuntu)](https://ardupilot.org/dev/docs/building-setup-linux.html#building-setup-linux):
 
@@ -49,17 +49,17 @@ Then, configure the build for Software-In-The-Loop:
 ./waf configure --board=sitl && ./waf sub
 ```
 
-### Build with Docker (only encouraged for Jetson use to upload firmware, not any other use cases)
+### Build with Docker (Recommended in most cases to avoid compatibility issues)
 
 #### Setup for the first time build
 
-For first time setup on Jetson, you may need to enable Docker access for your user:
+Install docker natively if needed (do not use Docker Desktop), you may need to enable Docker access for your user:
 
 ```bash
 sudo usermod -aG docker $USER
 ```
 
-> Note: You may need to restart Jetson for the changes to take effect.
+> Note: You may need to restart laptop for the changes to take effect.
 
 Go to the root of the repo:
 
@@ -76,7 +76,11 @@ docker build -t ardupilot-dev .
 Configure the build:
 
 ```bash
+# For actual boards
 docker run --rm -it -v $PWD:/ardupilot ardupilot-dev ./waf configure --board=Pixhawk6C
+
+# For SITL
+docker run --rm -it -v $PWD:/ardupilot ardupilot-dev ./waf configure --board=sitl
 ```
 
 > Run `docker run --rm -it -v $PWD:/ardupilot ardupilot-dev ./waf list_boards` to see the list of supported boards.
@@ -117,12 +121,16 @@ Please grant access to all the scripts below by running `chmod +x <script_path>`
 ### Native SITL (No JSON backend)
 
 ```bash
-./run_sitl_native.sh
+docker run --rm -it --network host -v $PWD:/ardupilot ardupilot-dev ./run_sitl_native.sh
 ```
 
 ### JSON SITL (With JSON backend such as UnityMDS)
 
-You will need to set the environment variable `AP_JSON_IP` to the IP address of the JSON backend server in the `.profile` file. This IP address is where the JSON backend is running (e.g. UnityMDS). If Linux, it should be `127.0.0.1`. If Windows, it should be the Windows WSL2 IP address (usually something like `172.x.x.x`).
+You will need to set the environment variable `AP_JSON_IP` to the IP address of the JSON backend server. This IP address is where the JSON backend is running (e.g. UnityMDS). If Linux, it should be `127.0.0.1`. If Windows, it should be the Windows WSL2 IP address (usually something like `172.x.x.x`, you get this ip from running `ipconfig` in window terminal, not running `ifconfig` in WSL2).
+
+> Note: Remember to enable all firewall rules with Unity if using Windows.
+
+#### Native (the old way)
 
 Replace `<JSON_BACKEND_IP_ADDRESS>` with the actual IP address of your JSON backend server and run the following command:
 ```bash
@@ -134,7 +142,12 @@ Then run the JSON backend and the SITL instance: (order doesn't matter)
 ./run_sitl_json.sh
 ```
 
-> Note: Remember to enable all firewall rules with Unity if using Windows.
+#### Docker (the new way, recommended)
+
+Edit the `run_sitl_json_docker.sh` script and replace `JSON_BACKEND_IP_ADDRESS` with the actual IP address of your JSON backend server. Then run the following command:
+```bash
+./run_sitl_json_docker.sh
+```
 
 ### JSON SITL multiple vehicles
 
