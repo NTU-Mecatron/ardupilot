@@ -156,13 +156,13 @@ Ardupilot supports running multiple SITL instances, each with different SITL and
 To run the first vehicle, change the ports in UnityMDS to `9002` and:
 ```bash
 cd ~/ardupilot/<your-vehicle-type>
-./run_sitl_json.sh -I 0
+./run_sitl_json_docker.sh -I 0
 ```
 
 To run the second vehicle, change the ports in UnityMDS to `9012` and:
 ```bash
 cd ~/ardupilot/<your-vehicle-type>
-./run_sitl_json.sh -I 1
+./run_sitl_json_docker.sh -I 1
 ```
 
 You can monitor multiple vehicles with QGroundControl by adding multiple UDP links with ports `14550`, `14560`, etc. The steps are as follows:
@@ -179,8 +179,6 @@ You can set parameters either by setting individual parameters or uploading enti
 
 ### Setting simple parameters
 
-To run the example `Kevin bot` inside `UnityMDS`, you need to set its frame config. Run this in the interactive terminal:
-
 ```bash
 param set SOME_PARAM 1
 reboot
@@ -196,39 +194,6 @@ To upload entire parameter files, run the following command in the interactive t
 param load params/no_gps_ext_nav.parm
 param load params/vectored_thrust.parm
 reboot
-```
-
-## Available frames (deprecated)
-
-For Kevin bot:
-
-```cpp
-case SUB_FRAME_CUSTOM:
-  //                 Motor #              Roll Factor     Pitch Factor    Yaw Factor      Throttle Factor     Forward Factor      Lateral Factor  Testing Order
-  // For Primary bot
-  _frame_class_string = "CUSTOM_PRIMARY";
-  add_motor_raw_6dof(AP_MOTORS_MOT_1,     0,              0,              -1.0f,          0,                  1.0f,               0,              1);
-  add_motor_raw_6dof(AP_MOTORS_MOT_2,     0,              0,              1.0f,           0,                  1.0f,               0,              2);
-  add_motor_raw_6dof(AP_MOTORS_MOT_3,     1.0f,           -1.0f,          -0.5,           -1.0f,              0,                  -1.0f,          3);
-  add_motor_raw_6dof(AP_MOTORS_MOT_4,     -1.0f,          -1.0f,          0.5,            -1.0f,              0,                  1.0f,           4);
-  add_motor_raw_6dof(AP_MOTORS_MOT_5,     1.0f,           1.0f,           -0.5,           -1.0f,              0,                  1.0f,           5);
-  add_motor_raw_6dof(AP_MOTORS_MOT_6,     -1.0f,          1.0f,           0.5,            -1.0f,              0,                  -1.0f,          6);
-  break;
-```
-
-For Lucy frame:
-
-```cpp
-case SUB_FRAME_SIMPLEROV_5:
-  //                 Motor #              Roll Factor     Pitch Factor    Yaw Factor      Throttle Factor     Forward Factor      Lateral Factor  Testing Order
-  // For Secondary bot
-  _frame_class_string = "CUSTOM_SECONDARY";
-  add_motor_raw_6dof(AP_MOTORS_MOT_1,     0,              0,               -1.0f,          0,                  1.0f,               0,              1);
-  add_motor_raw_6dof(AP_MOTORS_MOT_2,     0,              0,               1.0f,           0,                  1.0f,               0,              2);
-  add_motor_raw_6dof(AP_MOTORS_MOT_3,     1.0f,           -1.0f,           0,              -1.0f,              0,                  0,              3);
-  add_motor_raw_6dof(AP_MOTORS_MOT_4,     -1.0f,          -1.0f,           0,              -1.0f,              0,                  0,              4);
-  add_motor_raw_6dof(AP_MOTORS_MOT_5,     0,              1.0f,            0,              -1.0f,              0,                  0,              5);
-  break; 
 ```
 
 ## Common issues
