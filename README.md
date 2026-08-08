@@ -156,13 +156,13 @@ Ardupilot supports running multiple SITL instances, each with different SITL and
 To run the first vehicle, change the ports in UnityMDS to `9002` and:
 ```bash
 cd ~/ardupilot/<your-vehicle-type>
-./run_sitl_json.sh -I 0
+./run_sitl_json_docker.sh -I 0
 ```
 
 To run the second vehicle, change the ports in UnityMDS to `9012` and:
 ```bash
 cd ~/ardupilot/<your-vehicle-type>
-./run_sitl_json.sh -I 1
+./run_sitl_json_docker.sh -I 1
 ```
 
 You can monitor multiple vehicles with QGroundControl by adding multiple UDP links with ports `14550`, `14560`, etc. The steps are as follows:
@@ -178,8 +178,6 @@ You can monitor multiple vehicles with QGroundControl by adding multiple UDP lin
 You can set parameters either by setting individual parameters or uploading entire parameter files.
 
 ### Setting simple parameters
-
-To run the example `Kevin bot` inside `UnityMDS`, you need to set its frame config. Run this in the interactive terminal:
 
 ```bash
 param set SOME_PARAM 1
