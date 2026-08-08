@@ -5,14 +5,12 @@
 **Table of Contents**
 - [Installation](#installation)
 - [Build](#build)
-  - [Build natively (RECOMMENDED)](#build-natively-recommended)
-  - [Build with Docker (only encouraged for Jetson use to upload firmware, not any other use cases)](#build-with-docker-only-encouraged-for-jetson-use-to-upload-firmware-not-any-other-use-cases)
+  - [Build natively (NOT RECOMMENDED ANYMORE)](#build-natively-not-recommended-anymore)
+  - [Build with Docker (Recommended in most cases to avoid compatibility issues)](#build-with-docker-recommended-in-most-cases-to-avoid-compatibility-issues)
     - [Setup for the first time build](#setup-for-the-first-time-build)
     - [Subsequent builds](#subsequent-builds)
     - [Uploading firmware](#uploading-firmware)
 - [Running SITL](#running-sitl)
-  - [Native SITL (No JSON backend)](#native-sitl-no-json-backend)
-  - [JSON SITL (With JSON backend)](#json-sitl-with-json-backend-such-as-unitymds)
   - [JSON SITL multiple vehicles](#json-sitl-multiple-vehicles)
 - [Setting parameters](#setting-parameters)
   - [Setting simple parameters](#setting-simple-parameters)
@@ -138,13 +136,13 @@ Ardupilot supports running multiple SITL instances, each with different SITL and
 To run the first vehicle, change the ports in UnityMDS to `9002` and:
 ```bash
 cd ~/ardupilot/<your-vehicle-type>
-./run_sitl_json_docker.sh -I 0
+./run_sitl.sh -I 0
 ```
 
 To run the second vehicle, change the ports in UnityMDS to `9012` and:
 ```bash
 cd ~/ardupilot/<your-vehicle-type>
-./run_sitl_json_docker.sh -I 1
+./run_sitl.sh -I 1
 ```
 
 You can monitor multiple vehicles with QGroundControl by adding multiple UDP links with ports `14550`, `14560`, etc. The steps are as follows:
