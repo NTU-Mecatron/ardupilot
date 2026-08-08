@@ -34,7 +34,7 @@ cd copter-4.5
 ```
 
 ## Build
-### Build natively (RECOMMENDED)
+### Build natively (NOT RECOMMENDED ANYMORE)
 
 Instructions are extracted from [Setting up the Build Environment (Linux/Ubuntu)](https://ardupilot.org/dev/docs/building-setup-linux.html#building-setup-linux):
 
@@ -48,17 +48,17 @@ Then, configure the build for Software-In-The-Loop:
 ./waf configure --board=sitl && ./waf copter
 ```
 
-### Build with Docker (only encouraged for Jetson use to upload firmware, not any other use cases)
+### Build with Docker (Recommended in most cases to avoid compatibility issues)
 
 #### Setup for the first time build
 
-For first time setup on Jetson, you may need to enable Docker access for your user:
+Install docker natively if needed (do not use Docker Desktop), you may need to enable Docker access for your user:
 
 ```bash
 sudo usermod -aG docker $USER
 ```
 
-> Note: You may need to restart Jetson for the changes to take effect.
+> Note: You may need to restart laptop for the changes to take effect.
 
 Go to the root of the repo:
 
@@ -69,13 +69,17 @@ cd ~/ardupilot/copter-4.5
 Build the Docker image:
 
 ```bash
-docker build --rm -t ardupilot-dev .
+docker build -t ardupilot-dev .
 ```
 
 Configure the build:
 
 ```bash
+# For actual boards
 docker run --rm -it -v $PWD:/ardupilot ardupilot-dev ./waf configure --board=Pixhawk6C
+
+# For SITL
+docker run --rm -it -v $PWD:/ardupilot ardupilot-dev ./waf configure --board=sitl
 ```
 
 > Run `docker run --rm -it -v $PWD:/ardupilot ardupilot-dev ./waf list_boards` to see the list of supported boards.
@@ -100,57 +104,47 @@ docker run --rm -it --privileged -v $PWD:/ardupilot ardupilot-dev ./waf --upload
 
 ## Running SITL
 
-First, navigate to the root of the repo:
+1. First, navigate to the root of the repo:
 ```bash
 cd ~/ardupilot/copter-4.5
 ```
 
 Running SITL script from the root of the repo is extremely important. As extracted from Ardupilot:
 
-```
-eeprom.bin in the starting directory contains the parameters for your simulated vehicle. Always start from the same directory. It is recommended that you start in the main vehicle directory for the vehicle you are simulating, for example, start in the ArduPlane directory to simulate ArduPlane
-```
+"eeprom.bin in the starting directory contains the parameters for your simulated vehicle. Always start from the same directory. It is recommended that you start in the main vehicle directory for the vehicle you are simulating, for example, start in the ArduPlane directory to simulate ArduPlane".
 
-Please grant access to all the scripts below by running `chmod +x <script_path>` once. Feel free to edit the scripts to modify the IP address and port if needed.
+2. Take a look at the `run_sitl.sh` script and modify the IP addresses as needed. Grant access to all the scripts below by running `chmod +x run_sitl.sh` once.
 
-### Native SITL (No JSON backend)
+If using UnityMDS, make sure to set `JSON_BACKEND_SIM_IP` to the IP address of the JSON backend server. This IP address is where the JSON backend is running (e.g. UnityMDS). If Linux, it should be `127.0.0.1`. If Windows, it should be the Windows WSL2 IP address (usually something like `172.x.x.x`, you get this ip from running `ipconfig` in window terminal, not running `ifconfig` in WSL2).
 
+3. Run SITL:
 ```bash
-./run_sitl_native.sh
-```
+# Run SITL in docker (recommended, default)
+./run_sitl.sh 
 
-### JSON SITL (With JSON backend such as UnityMDS)
+# Run with a different instance id (default is 0, see more explanation in running multiple vehicles section)
+./run_sitl.sh -I 1
 
-You will need to set the environment variable `AP_JSON_IP` to the IP address of the JSON backend server in the `.profile` file. This IP address is where the JSON backend is running (e.g. UnityMDS). If Linux, it should be `127.0.0.1`. If Windows, it should be the Windows WSL2 IP address (usually something like `172.x.x.x`).
-
-Replace `<JSON_BACKEND_IP_ADDRESS>` with the actual IP address of your JSON backend server and run the following command:
-```bash
-echo 'export AP_JSON_IP=<JSON_BACKEND_IP_ADDRESS>' >> ~/.profile && source ~/.profile
-```
-
-Then run the JSON backend and the SITL instance: (order doesn't matter)
-```bash
-./run_sitl_json.sh
+# Run --help to understand the options below
+./run_sitl.sh --native --no-docker
 ```
 
 > Note: Remember to enable all firewall rules with Unity if using Windows.
 
-> Note: You must set the correct vehicle frame for it to run properly. Refer to Section [Setting parameters](#setting-simple-parameters).
-
 ### JSON SITL multiple vehicles
 
-Ardupilot supports running multiple SITL instances, each with different SITL and GCS ports depending on instance id. When you execute `./run_sitl_json.sh`, the default instance id is `0`, corresponding to SITL port `9002` and GCS port `14550`. Port number auto-increments by `10` for each instance id increment. For example, instance id `1` corresponds to SITL port `9012` and GCS port `14560`.
+Ardupilot supports running multiple SITL instances, each with different SITL and GCS ports depending on instance id. When you execute `./run_sitl.sh`, the default instance id is `0`, corresponding to SITL port `9002` and GCS port `14550`. Port number auto-increments by `10` for each instance id increment. For example, instance id `1` corresponds to SITL port `9012` and GCS port `14560`.
 
 To run the first vehicle, change the ports in UnityMDS to `9002` and:
 ```bash
 cd ~/ardupilot/<your-vehicle-type>
-./run_sitl_json.sh -I 0
+./run_sitl_json_docker.sh -I 0
 ```
 
 To run the second vehicle, change the ports in UnityMDS to `9012` and:
 ```bash
 cd ~/ardupilot/<your-vehicle-type>
-./run_sitl_json.sh -I 1
+./run_sitl_json_docker.sh -I 1
 ```
 
 You can monitor multiple vehicles with QGroundControl by adding multiple UDP links with ports `14550`, `14560`, etc. The steps are as follows:
@@ -167,11 +161,8 @@ You can set parameters either by setting individual parameters or uploading enti
 
 ### Setting simple parameters
 
-For typical `Quad-X` frame, you must set correct frame configuration:
-
 ```bash
-param set FRAME_CLASS 1
-param set FRAME_TYPE 1
+param set SOME_PARAM 1
 reboot
 ```
 
@@ -179,10 +170,10 @@ reboot
 
 You can refer to example parameter files in the `params/` folder and read up their definitions on official Ardupilot documentation.
 
-To upload entire parameter files, run the following command in the interactive terminal. For example, to test with no-GPS navigation:
+To upload entire parameter files, run the following command in the interactive terminal. For example, in order to configure the correct X-frame type for the quadcopter, run the following command:
 
 ```bash
-param load params/no_gps_ext_nav.parm
+param load params/quad_x_frame.parm
 reboot
 ```
 
