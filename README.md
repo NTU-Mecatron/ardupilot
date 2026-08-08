@@ -5,19 +5,16 @@
 **Table of Contents**
 - [Installation](#installation)
 - [Build](#build)
-  - [Build natively (RECOMMENDED)](#build-natively-recommended)
-  - [Build with Docker (only encouraged for Jetson use to upload firmware, not any other use cases)](#build-with-docker-only-encouraged-for-jetson-use-to-upload-firmware-not-any-other-use-cases)
+  - [Build natively (NOT RECOMMENDED ANYMORE)](#build-natively-not-recommended-anymore)
+  - [Build with Docker (Recommended in most cases to avoid compatibility issues)](#build-with-docker-recommended-in-most-cases-to-avoid-compatibility-issues)
     - [Setup for the first time build](#setup-for-the-first-time-build)
     - [Subsequent builds](#subsequent-builds)
     - [Uploading firmware](#uploading-firmware)
 - [Running SITL](#running-sitl)
-  - [Native SITL (No JSON backend)](#native-sitl-no-json-backend)
-  - [JSON SITL (With JSON backend)](#json-sitl-with-json-backend-such-as-unitymds)
   - [JSON SITL multiple vehicles](#json-sitl-multiple-vehicles)
 - [Setting parameters](#setting-parameters)
   - [Setting simple parameters](#setting-simple-parameters)
   - [Uploading entire parameter files](#uploading-entire-parameter-files)
-- [Available frames](#available-frames)
 - [Common issues](#common-issues)
 
 ## Installation
@@ -105,64 +102,47 @@ docker run --rm -it --privileged -v $PWD:/ardupilot ardupilot-dev ./waf --upload
 
 ## Running SITL
 
-First, navigate to the root of the repo:
+1. First, navigate to the root of the repo:
 ```bash
 cd ~/ardupilot/sub-4.5
 ```
 
 Running SITL script from the root of the repo is extremely important. As extracted from Ardupilot:
 
-```
-eeprom.bin in the starting directory contains the parameters for your simulated vehicle. Always start from the same directory. It is recommended that you start in the main vehicle directory for the vehicle you are simulating, for example, start in the ArduPlane directory to simulate ArduPlane
-```
+"eeprom.bin in the starting directory contains the parameters for your simulated vehicle. Always start from the same directory. It is recommended that you start in the main vehicle directory for the vehicle you are simulating, for example, start in the ArduPlane directory to simulate ArduPlane".
 
-Please grant access to all the scripts below by running `chmod +x <script_path>` once. Feel free to edit the scripts to modify the IP address and port if needed.
+2. Take a look at the `run_sitl.sh` script and modify the IP addresses as needed. Grant access to all the scripts below by running `chmod +x run_sitl.sh` once.
 
-### Native SITL (No JSON backend)
+If using UnityMDS, make sure to set `JSON_BACKEND_SIM_IP` to the IP address of the JSON backend server. This IP address is where the JSON backend is running (e.g. UnityMDS). If Linux, it should be `127.0.0.1`. If Windows, it should be the Windows WSL2 IP address (usually something like `172.x.x.x`, you get this ip from running `ipconfig` in window terminal, not running `ifconfig` in WSL2).
 
+3. Run SITL:
 ```bash
-docker run --rm -it --network host -v $PWD:/ardupilot ardupilot-dev ./run_sitl_native.sh
+# Run SITL in docker (recommended, default)
+./run_sitl.sh 
+
+# Run with a different instance id (default is 0, see more explanation in running multiple vehicles section)
+./run_sitl.sh -I 1
+
+# Run --help to understand the options below
+./run_sitl.sh --native --no-docker
 ```
-
-### JSON SITL (With JSON backend such as UnityMDS)
-
-You will need to set the environment variable `AP_JSON_IP` to the IP address of the JSON backend server. This IP address is where the JSON backend is running (e.g. UnityMDS). If Linux, it should be `127.0.0.1`. If Windows, it should be the Windows WSL2 IP address (usually something like `172.x.x.x`, you get this ip from running `ipconfig` in window terminal, not running `ifconfig` in WSL2).
 
 > Note: Remember to enable all firewall rules with Unity if using Windows.
 
-#### Native (the old way)
-
-Replace `<JSON_BACKEND_IP_ADDRESS>` with the actual IP address of your JSON backend server and run the following command:
-```bash
-echo 'export AP_JSON_IP=<JSON_BACKEND_IP_ADDRESS>' >> ~/.profile && source ~/.profile
-```
-
-Then run the JSON backend and the SITL instance: (order doesn't matter)
-```bash
-./run_sitl_json.sh
-```
-
-#### Docker (the new way, recommended)
-
-Edit the `run_sitl_json_docker.sh` script and replace `JSON_BACKEND_IP_ADDRESS` with the actual IP address of your JSON backend server. Then run the following command:
-```bash
-./run_sitl_json_docker.sh
-```
-
 ### JSON SITL multiple vehicles
 
-Ardupilot supports running multiple SITL instances, each with different SITL and GCS ports depending on instance id. When you execute `./run_sitl_json.sh`, the default instance id is `0`, corresponding to SITL port `9002` and GCS port `14550`. Port number auto-increments by `10` for each instance id increment. For example, instance id `1` corresponds to SITL port `9012` and GCS port `14560`.
+Ardupilot supports running multiple SITL instances, each with different SITL and GCS ports depending on instance id. When you execute `./run_sitl.sh`, the default instance id is `0`, corresponding to SITL port `9002` and GCS port `14550`. Port number auto-increments by `10` for each instance id increment. For example, instance id `1` corresponds to SITL port `9012` and GCS port `14560`.
 
 To run the first vehicle, change the ports in UnityMDS to `9002` and:
 ```bash
 cd ~/ardupilot/<your-vehicle-type>
-./run_sitl_json_docker.sh -I 0
+./run_sitl.sh -I 0
 ```
 
 To run the second vehicle, change the ports in UnityMDS to `9012` and:
 ```bash
 cd ~/ardupilot/<your-vehicle-type>
-./run_sitl_json_docker.sh -I 1
+./run_sitl.sh -I 1
 ```
 
 You can monitor multiple vehicles with QGroundControl by adding multiple UDP links with ports `14550`, `14560`, etc. The steps are as follows:
