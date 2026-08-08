@@ -2,9 +2,11 @@
 
 # Usage: ./run_sitl.sh [--json|--native] [--docker] [-I INSTANCE]
 
-JSON_BACKEND_SIM_IP=127.0.0.1
+JSON_BACKEND_SIM_IP=127.0.0.1       # Ignore this if running in native mode
+
 QGC_IP=127.0.0.1
 QGC_PORT=14550
+
 MAVROS_IP=127.0.0.1
 MAVROS_PORT=14555   # Default, but will be automatically incremented by 10 for each instance (see below)
 
