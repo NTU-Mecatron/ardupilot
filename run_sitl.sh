@@ -73,6 +73,7 @@ PYTHON_CMD="python3 Tools/autotest/sim_vehicle.py \
     -L SGMarinaBarrage \
     -I $INSTANCE \
     --sysid $SYSID \
+    --use-dir logs/instance_$INSTANCE \
     --mavproxy-args=\"--streamrate=-1\""
 
 # Add mode-specific options

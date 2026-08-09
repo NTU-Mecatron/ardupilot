@@ -107,9 +107,7 @@ docker run --rm -it --privileged -v $PWD:/ardupilot ardupilot-dev ./waf --upload
 cd ~/ardupilot/sub-4.5
 ```
 
-Running SITL script from the root of the repo is extremely important. As extracted from Ardupilot:
-
-"eeprom.bin in the starting directory contains the parameters for your simulated vehicle. Always start from the same directory. It is recommended that you start in the main vehicle directory for the vehicle you are simulating, for example, start in the ArduPlane directory to simulate ArduPlane".
+Running SITL script from the root of the repo is important, as SITL will search for `eeprom.bin` file in the relative directory `logs/instance_$INSTANCE` to load parameters and settings from the previous run.
 
 2. Take a look at the `run_sitl.sh` script and modify the IP addresses as needed. Grant access to all the scripts below by running `chmod +x run_sitl.sh` once.
 
