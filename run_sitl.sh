@@ -76,11 +76,16 @@ PYTHON_CMD="python3 Tools/autotest/sim_vehicle.py \
     --use-dir logs/instance_$INSTANCE \
     --mavproxy-args=\"--streamrate=-1\""
 
+ARDUPILOT_ROOT_DIR=$PWD
+if [ "$USE_DOCKER" = true ]; then
+    ARDUPILOT_ROOT_DIR="/ardupilot"
+fi
+
 # Add mode-specific options
 if [ "$MODE" = "json" ]; then
     PYTHON_CMD="$PYTHON_CMD \
     --model JSON:$JSON_BACKEND_SIM_IP \
-    --add-param-file=params/sitl_json.parm"
+    --add-param-file=$ARDUPILOT_ROOT_DIR/params/sitl_json.parm"
 fi
 
 # Execute the command
