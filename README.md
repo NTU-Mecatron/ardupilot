@@ -4,6 +4,8 @@
 
 **Table of Contents**
 - [Installation](#installation)
+  - [Multi-vehicle setup with script (RobotX)](#multi-vehicle-setup-with-script-robotx)
+  - [Manual installation](#manual-installation)
 - [Build](#build)
   - [Build natively (NOT RECOMMENDED ANYMORE)](#build-natively-not-recommended-anymore)
   - [Build with Docker (Recommended in most cases to avoid compatibility issues)](#build-with-docker-recommended-in-most-cases-to-avoid-compatibility-issues)
@@ -19,6 +21,14 @@
 
 ## Installation
 
+### Multi-vehicle setup with script (RobotX)
+
+A single script clones all three vehicles (UUV, USV and UAV) into `~/ardupilot` and builds SITL for each of them with Docker. See [docs/setup_multi_vehicle.md](docs/setup_multi_vehicle.md) for the instructions.
+
+Once it finishes, skip ahead to [Running SITL](#running-sitl) — you can ignore the rest of the Installation and Build sections.
+
+### Manual installation
+
 Create a general folder if you have not done so:
 ```bash
 mkdir ~/ardupilot
@@ -27,9 +37,11 @@ mkdir ~/ardupilot
 Clone the repository:
 ```bash
 cd ~/ardupilot
-git clone --recursive -b Sub-4.5 https://github.com/NTU-Mecatron/ardupilot.git sub-4.5
-cd sub-4.5
+git clone --recursive -b Sub-4.5 https://github.com/NTU-Mecatron/ardupilot.git uuv-sub-4.5
+cd uuv-sub-4.5
 ```
+
+Then follow the [Build](#build) steps below.
 
 ## Build
 ### Build natively (NOT RECOMMENDED ANYMORE)
@@ -61,7 +73,7 @@ sudo usermod -aG docker $USER
 Go to the root of the repo:
 
 ```bash
-cd ~/ardupilot/sub-4.5
+cd ~/ardupilot/uuv-sub-4.5
 ```
 
 Build the Docker image:
@@ -104,7 +116,7 @@ docker run --rm -it --privileged -v $PWD:/ardupilot ardupilot-dev ./waf --upload
 
 1. First, navigate to the root of the repo:
 ```bash
-cd ~/ardupilot/sub-4.5
+cd ~/ardupilot/uuv-sub-4.5
 ```
 
 Running SITL script from the root of the repo is important, as SITL will search for `eeprom.bin` file in the relative directory `logs/instance_$INSTANCE` to load parameters and settings from the previous run.
