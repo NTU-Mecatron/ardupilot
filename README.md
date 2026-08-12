@@ -4,7 +4,8 @@
 
 **Table of Contents**
 - [Installation](#installation)
-- [Quick setup with script](#quick-setup-with-script)
+  - [Quick setup with script (recommended)](#quick-setup-with-script-recommended)
+  - [Manual installation](#manual-installation)
 - [Build](#build)
   - [Build natively (NOT RECOMMENDED ANYMORE)](#build-natively-not-recommended-anymore)
   - [Build with Docker (Recommended in most cases to avoid compatibility issues)](#build-with-docker-recommended-in-most-cases-to-avoid-compatibility-issues)
@@ -20,6 +21,24 @@
 
 ## Installation
 
+### Quick setup with script (recommended)
+
+Download and run the setup script:
+
+```bash
+mkdir -p ~/ardupilot
+cd ~/ardupilot
+wget https://github.com/NTU-Mecatron/miscellaneous/releases/download/ardupilot/setup.sh
+chmod +x setup.sh
+./setup.sh
+```
+
+The script clones all three vehicles into `~/ardupilot` — `uuv-sub-4.5` and `usv-sub-4.5` (branch `Sub-4.5`) and `copter-4.5` (branch `Copter-4.5`) — builds the shared `ardupilot-dev` Docker image, and then configures and builds SITL for each of them. Docker must be installed and usable by your user first (see the [`usermod -aG docker`](#setup-for-the-first-time-build) note below).
+
+Once it finishes, skip ahead to [Running SITL](#running-sitl).
+
+### Manual installation
+
 Create a general folder if you have not done so:
 ```bash
 mkdir ~/ardupilot
@@ -32,17 +51,7 @@ git clone --recursive -b Sub-4.5 https://github.com/NTU-Mecatron/ardupilot.git u
 cd uuv-sub-4.5
 ```
 
-## Quick setup with script
-
-Instead of doing the Docker steps below by hand, run the setup script from the root of `uuv-sub-4.5`:
-
-```bash
-./setup.sh
-```
-
-It builds the shared `ardupilot-dev` Docker image, clones `usv-sub-4.5` (branch `Sub-4.5`) and `copter-4.5` (branch `Copter-4.5`) into `~/ardupilot`, and then configures and builds SITL for all three vehicles. Docker must be installed and usable by your user first (see the [`usermod -aG docker`](#setup-for-the-first-time-build) note below). Re-running the script is safe: existing directories are not re-cloned.
-
-Once it finishes, skip ahead to [Running SITL](#running-sitl).
+Then follow the [Build](#build) steps below.
 
 ## Build
 ### Build natively (NOT RECOMMENDED ANYMORE)

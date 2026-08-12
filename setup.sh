@@ -2,17 +2,15 @@
 #
 # setup.sh - one-shot setup of the Mecatron ArduPilot SITL environments.
 #
-# Assumes you have already done:
-#   mkdir ~/ardupilot
-#   cd ~/ardupilot
-#   git clone --recursive -b Sub-4.5 https://github.com/NTU-Mecatron/ardupilot.git uuv-sub-4.5
-#   cd uuv-sub-4.5
-#
-# Then run this script from the root of uuv-sub-4.5:
+# Usage:
+#   mkdir -p ~/ardupilot && cd ~/ardupilot
+#   wget https://github.com/NTU-Mecatron/miscellaneous/releases/download/ardupilot/setup.sh
+#   chmod +x setup.sh
 #   ./setup.sh
 #
-# It clones the sibling repos (usv-sub-4.5, copter-4.5), builds a single shared
-# Docker image `ardupilot-dev`, and configures + builds SITL for all three.
+# It clones uuv-sub-4.5, usv-sub-4.5 and copter-4.5 into ~/ardupilot, builds a
+# single shared Docker image `ardupilot-dev`, and configures + builds SITL for
+# all three.
 
 set -euo pipefail
 
@@ -27,7 +25,7 @@ VEHICLES=(
     "copter-4.5|Copter-4.5|copter"
 )
 
-# The repo this script lives in; it is already cloned, so it is never cloned again.
+# The Docker image is built once, from this repo, and shared by all three.
 PRIMARY_DIR="uuv-sub-4.5"
 
 # ---------------------------------------------------------------- logging ---
@@ -70,36 +68,10 @@ check_prereqs() {
       sudo systemctl start docker"
     fi
 
-    # The script must run from ~/ardupilot/uuv-sub-4.5 so the sibling repos land
-    # in ~/ardupilot alongside it, and so run_sitl.sh finds logs/instance_$I later.
-    local here
-    here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    if [ "$here" != "$ARDUPILOT_BASE/$PRIMARY_DIR" ]; then
-        die "this script must live in and be run from $ARDUPILOT_BASE/$PRIMARY_DIR (found: $here).
-
-  Expected setup:
-      mkdir -p ~/ardupilot && cd ~/ardupilot
-      git clone --recursive -b Sub-4.5 $REPO_URL $PRIMARY_DIR
-      cd $PRIMARY_DIR && ./setup.sh"
-    fi
-
-    [ -f "$ARDUPILOT_BASE/$PRIMARY_DIR/Dockerfile" ] || die "Dockerfile not found in $ARDUPILOT_BASE/$PRIMARY_DIR"
-
     ok "Prerequisites look good"
 }
 
 # ------------------------------------------------------------------ steps ---
-
-build_image() {
-    info "Building Docker image '$IMAGE' (this takes a while the first time)"
-    # Match the container user to the host user so files written into the mounted
-    # volume (build/, logs/) are owned by us instead of uid 1000.
-    docker build -t "$IMAGE" \
-        --build-arg USER_UID="$(id -u)" \
-        --build-arg USER_GID="$(id -g)" \
-        "$ARDUPILOT_BASE/$PRIMARY_DIR"
-    ok "Docker image '$IMAGE' ready"
-}
 
 clone_repo() {
     local dir="$1" branch="$2"
@@ -117,19 +89,28 @@ clone_repo() {
     git clone --recursive -b "$branch" "$REPO_URL" "$path"
 }
 
+build_image() {
+    info "Building Docker image '$IMAGE' (this takes a while the first time)"
+    # Match the container user to the host user so files written into the mounted
+    # volume (build/, logs/) are owned by us instead of uid 1000.
+    docker build -t "$IMAGE" \
+        --build-arg USER_UID="$(id -u)" \
+        --build-arg USER_GID="$(id -g)" \
+        "$ARDUPILOT_BASE/$PRIMARY_DIR"
+    ok "Docker image '$IMAGE' ready"
+}
+
 waf() {
     local path="$1"; shift
     docker run --rm "${DOCKER_TTY[@]}" -v "$path:/ardupilot" "$IMAGE" ./waf "$@"
 }
 
-setup_vehicle() {
+build_vehicle() {
     local dir="$1" branch="$2" target="$3"
     local path="$ARDUPILOT_BASE/$dir"
 
     echo
     info "===== $dir ($branch, ./waf $target) ====="
-
-    clone_repo "$dir" "$branch"
 
     info "Configuring SITL build for $dir"
     waf "$path" configure --board=sitl
@@ -138,7 +119,6 @@ setup_vehicle() {
     waf "$path" "$target"
 
     [ -f "$path/run_sitl.sh" ] && chmod +x "$path/run_sitl.sh"
-    [ -f "$path/setup.sh" ] && chmod +x "$path/setup.sh"
 
     ok "$dir is ready"
 }
@@ -147,11 +127,21 @@ setup_vehicle() {
 
 main() {
     check_prereqs
+
+    mkdir -p "$ARDUPILOT_BASE"
+
+    # Clone everything first, so the shared Docker image can be built from
+    # uuv-sub-4.5 before any vehicle is compiled.
+    for entry in "${VEHICLES[@]}"; do
+        IFS='|' read -r dir branch _ <<< "$entry"
+        clone_repo "$dir" "$branch"
+    done
+
     build_image
 
     for entry in "${VEHICLES[@]}"; do
         IFS='|' read -r dir branch target <<< "$entry"
-        setup_vehicle "$dir" "$branch" "$target"
+        build_vehicle "$dir" "$branch" "$target"
     done
 
     echo
