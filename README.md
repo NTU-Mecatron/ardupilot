@@ -21,21 +21,11 @@
 
 ## Installation
 
-### Quick setup with script (recommended)
+### Multi-vehicle setup with script (RobotX)
 
-Download and run the setup script:
+A single script clones all three vehicles (UUV, USV and UAV) into `~/ardupilot` and builds SITL for each of them with Docker. See [docs/setup_multi_vehicle.md](docs/setup_multi_vehicle.md) for the instructions.
 
-```bash
-mkdir -p ~/ardupilot
-cd ~/ardupilot
-wget https://github.com/NTU-Mecatron/miscellaneous/releases/download/ardupilot/setup.sh
-chmod +x setup.sh
-./setup.sh
-```
-
-The script clones all three vehicles into `~/ardupilot` — `uuv-sub-4.5` and `usv-sub-4.5` (branch `Sub-4.5`) and `copter-4.5` (branch `Copter-4.5`) — builds the shared `ardupilot-dev` Docker image, and then configures and builds SITL for each of them. Docker must be installed and usable by your user first (see the [`usermod -aG docker`](#setup-for-the-first-time-build) note below).
-
-Once it finishes, skip ahead to [Running SITL](#running-sitl).
+Once it finishes, skip ahead to [Running SITL](#running-sitl) — you can ignore the rest of the Installation and Build sections.
 
 ### Manual installation
 
