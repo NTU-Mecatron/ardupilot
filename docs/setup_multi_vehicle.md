@@ -30,15 +30,4 @@ chmod +x setup.sh
 
 ## After it finishes
 
-Run SITL from the root of whichever vehicle you want:
-
-```bash
-cd ~/ardupilot/uuv-sub-4.5
-./run_sitl.sh
-```
-
-See [Running SITL](../README.md#running-sitl) for the options, and rebuild after code changes with:
-
-```bash
-docker run --rm -it -v $PWD:/ardupilot ardupilot-dev ./waf sub      # or ./waf copter
-```
+Continue with [Running SITL](../README.md#running-sitl) in the main README, from the root of whichever vehicle you want to run.
