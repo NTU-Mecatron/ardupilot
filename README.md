@@ -4,7 +4,7 @@
 
 **Table of Contents**
 - [Installation](#installation)
-  - [Quick setup with script (recommended)](#quick-setup-with-script-recommended)
+  - [Multi-vehicle setup with script (RobotX)](#multi-vehicle-setup-with-script-robotx)
   - [Manual installation](#manual-installation)
 - [Build](#build)
   - [Build natively (NOT RECOMMENDED ANYMORE)](#build-natively-not-recommended-anymore)
