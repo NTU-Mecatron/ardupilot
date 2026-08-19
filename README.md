@@ -181,8 +181,8 @@ You can refer to example parameter files in the `params/` folder and read up the
 To upload entire parameter files, run the following command in the interactive terminal. For example, to test with no-GPS underwater (using DVL), and upload the correct thruster config:
 
 ```bash
-param load params/no_gps_ext_nav.parm
-param load params/vectored_thrust.parm
+param load /ardupilot/params/no_gps_ext_nav.parm
+param load /ardupilot/params/vectored_thrust.parm
 reboot
 ```
 
