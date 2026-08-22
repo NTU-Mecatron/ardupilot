@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Usage: ./run_sitl.sh [--json|--native] [--docker] [-I INSTANCE]
+# Usage: ./run_sitl.sh [--json|--native] [--no-docker] [-I INSTANCE]
 
 JSON_BACKEND_SIM_IP=127.0.0.1       # Ignore this if running in native mode
 
@@ -56,6 +56,7 @@ done
 # Calculate port and sysid based on instance
 MAVROS_PORT=$((14555 + INSTANCE * 10))
 SYSID=$((1 + INSTANCE))
+CONTAINER_NAME="ardupilot_sitl_${INSTANCE}"
 
 # Check if sim_vehicle.py exists
 if [ ! -f "Tools/autotest/sim_vehicle.py" ]; then
@@ -67,7 +68,7 @@ fi
 
 # Build the base python command
 PYTHON_CMD="python3 Tools/autotest/sim_vehicle.py \
-    -v ArduCopter -f X \
+    -v ArduSub \
     --out udp:$MAVROS_IP:$MAVROS_PORT \
     --out udp:$QGC_IP:$QGC_PORT \
     -L SGMarinaBarrage \
@@ -90,9 +91,13 @@ fi
 
 # Execute the command
 if [ "$USE_DOCKER" = true ]; then
+    # Force-remove any previous container with the same name if it was left running/orphaned
+    docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1
+
     docker run --rm -it \
+        --name "$CONTAINER_NAME" \
         --network host \
-        -v $PWD:/ardupilot \
+        -v "$PWD:/ardupilot" \
         ardupilot-dev \
         bash -c "$PYTHON_CMD"
 else
