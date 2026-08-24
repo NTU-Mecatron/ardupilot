@@ -68,7 +68,7 @@ fi
 
 # Build the base python command
 PYTHON_CMD="python3 Tools/autotest/sim_vehicle.py \
-    -v ArduSub \
+    -v ArduCopter -f X \
     --out udp:$MAVROS_IP:$MAVROS_PORT \
     --out udp:$QGC_IP:$QGC_PORT \
     -L SGMarinaBarrage \
