@@ -62,7 +62,7 @@ if (is_auv_mode) {
 
 ### 2. Assuming T fins (like an aircraft), test out how original ArduPlane control applies to TorpAUV in terms of diving and maintaining depth
 
-Modify `ArduPlane/mode_takeoff.cpp` to make AUV dive to a certain depth instead of "flying up". By default, after taking off, the AUV will loiter at a distance around the launch point, but we will skip it for now and make it keep go straight. Purpose is to test out the control flow and see if it can maintain depth.
+Keep `ArduPlane/mode_takeoff.cpp`; takeoff altitude can be set to negative to make it work for the AUV. By default, after taking off, the AUV will loiter at a distance around the launch point, but we will skip it for now and make it keep go straight. Purpose is to test out the control flow and see if it can maintain depth.
 
 No waypoint/yaw navigation here as it requires changing from roll-to-turn to yaw-to-turn.
 

@@ -239,6 +239,11 @@ private:
     // are we currently in long failsafe but have postponed it in MODE TAKEOFF until min level alt is reached
     bool long_failsafe_pending;
 
+    // AUV mode flag - enables torpedo AUV control allocation
+    // When true, uses yaw for waypoint navigation instead of roll,
+    // and configures barometer for depth measurement
+    bool is_auv_mode = false;
+
     // GCS selection
     GCS_Plane _gcs; // avoid using this; use gcs()
     GCS_Plane &gcs() { return _gcs; }
