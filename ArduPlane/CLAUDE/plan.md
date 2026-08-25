@@ -6,19 +6,22 @@ This document outlines the focused code changes needed to adapt ArduPlane for a 
 ## Assumptions / Already Available
 - **Positioning**: Available via GPS or external positioning (AP_NavEKF3 external positioning)
 - **Depth Sensor**: Already in `libraries/AP_Baro/AP_MS5611` (reads depth from pressure)
-- **Frame Convention**: Forward-Right-Down (depth is positive downward)
 - **Velocity**: Externally fed into the system
 - **Leak Detection**: Already implemented
 - **Physics Testing**: External physics backend for SITL
 
-## Core Control Differences: Aircraft vs Torpedo AUV
+## Core Control Comparison: Aircraft vs Torpedo AUV
+
+### Similarities
+- Pitch for altitude/depth control
+- libraries/AP_Baro already provides depth from pressure sensor following the same sign convention as altitude (negative = deeper)
+
+### Differences
 
 | Aspect | Aircraft | Torpedo AUV |
 |--------|----------|-------------|
-| Vertical Control | Pitch for altitude | Pitch for depth (positive down) |
-| Lateral Control | **Roll for turning** | **Yaw for turning** |
+| Lateral Control | **Roll for turning** | **Yaw for turning, roll must try to be balanced as much as possible** |
 | Coordination | Yaw for coordination | Roll less critical / used differently |
-| Reference | Altitude (barometer) | Depth (pressure sensor) |
 
 ---
 
@@ -30,18 +33,18 @@ Based on ArduPlane's architecture (from code_structure.md):
 - **Servo Output Flow**: `set_servos` → `servos_output()` → mixing → PWM output
 
 **AUV Modifications Fit Into**:
-1. **update_alt()** (10Hz) — Add depth conversion, negate sink_rate
+1. **init()** — Configure barometer to BARO_TYPE_WATER
 2. **update_control_mode()** (Fast) → calls **mode->update()** — Add yaw calculation instead of roll
 3. **stabilize()** (Fast) — Route yaw instead of roll, keep pitch unchanged
 4. **servos_output()** (Fast) — Replace mixing with fin allocation, read pitch/yaw/roll outputs
 
 ---
 
-## Critical Control Architecture Changes
+## Control Architecture Plans
 
 ### 1. Depth Control via Pitch (Instead of Altitude)
 
-**Key Insight**: Aircraft pitches to control altitude; AUV pitches to control depth. AP_Baro already calculates depth for water sensors—reuse it directly.
+**Key Insight**: Aircraft pitches to control altitude; AUV pitches to control depth. AP_Baro already calculates depth for water sensors—just use it directly, like ArduSub does.
 
 #### 1.1 Add AUV Mode Flag and Configure Barometer
 **Files to modify:**
@@ -59,55 +62,29 @@ bool is_auv_mode = false;  // Runtime flag to enable AUV control allocation
 // In ArduPlane.cpp init() or similar startup location
 #ifdef AUV_MODE
 if (is_auv_mode) {
-    // Configure AP_Baro for water depth measurement
+    // Configure AP_Baro for water depth measurement (like ArduSub does)
     // Set barometer to BARO_TYPE_WATER (calculates depth instead of altitude)
-    // _specific_gravity parameter: 1.0 for fresh, 1.024 for salt (configurable)
     barometer.set_type(0, AP_Baro::BARO_TYPE_WATER);  // Set primary barometer as water sensor
 }
 #endif
 ```
 
-**AP_Baro Already Provides:**
-- `barometer.get_altitude()` returns depth (meters, positive down) when sensor type is `BARO_TYPE_WATER`
-- `_SPEC_GRAV` parameter (already exists in AP_Baro): scales depth for freshwater (1.0) or saltwater (1.024)
-- Depth formula: `depth = (ground_pressure - corrected_pressure) / 9800.0f / _specific_gravity`
-- No custom barometer_to_depth() function needed!
+#### 1.2 Use Barometer Depth Directly in TECS/Control Loop
+**No special handling needed**: Follow ArduSub's pattern.
 
-#### 1.2 Modify `update_alt()` — Just Negate for Sign Convention
-**Control Flow Point**: This 10Hz task reads barometer and calculates depth/altitude.
-
-**File**: [ArduPlane/ArduPlane.cpp](ArduPlane/ArduPlane.cpp#L548) — `update_alt()` function
-
-**Simple modification**:
-```cpp
-void Plane::update_alt() {
-    barometer.update();
-    
-    // AP_Baro already calculates depth when sensor type is BARO_TYPE_WATER
-    // No conversion needed—just use the value
-    
-    // Negate sink rate for AUV (AP_Baro depth is positive down, but TECS expects sign flip)
-#ifdef AUV_MODE
-    if (is_auv_mode) {
-        auto_state.sink_rate = -auto_state.sink_rate;
-    }
-#endif
-    
-    // ... rest of function (TECS, flight stages, etc. unchanged)
-}
-```
-
-**Why this works**: 
-- AP_Baro's `get_altitude()` returns depth (positive down) when type=BARO_TYPE_WATER
-- TECS and downstream code still operates on `relative_altitude` and `sink_rate`
-- Sign negation at update_alt() propagates to all downstream controllers
-- All existing infrastructure (TECS, missions, modes) reuses without modification
+- `barometer.get_altitude()` returns altitude/depth (meters)
+  - Positive values above water (rarely used for AUV)
+  - Negative values underwater: -5m means 5 meters deep
+- TECS will use this for depth control (same as altitude control for aircraft)
+- Altitude/depth coordinate frame is separate from body frame (FRD)
+- Just use the values as-is—AP_Baro already handles sign convention correctly
 
 #### 1.3 Verify No Modifications Needed Downstream
-- ✓ `relative_target_altitude_cm()` — Works as-is (negative value interprets as depth)
-- ✓ TECS controller — Works unchanged (operates on altitude error, which is now depth error)
-- ✓ Flight modes (AUTO, GUIDED, etc.) — Work unchanged (use relative_altitude for depth)
-- ✓ Mission waypoints — Altitude field becomes depth field (positive = meters down)
+- ✓ `relative_target_altitude_cm()` — Works as-is (now represents depth target, negative = deeper)
+- ✓ TECS controller — Works unchanged (operates on depth error with same control logic)
+- ✓ Flight modes (AUTO, GUIDED, etc.) — Work unchanged (use relative_altitude for depth targets)
+- ✓ Mission waypoints — Altitude field becomes depth field (negative = deeper underwater)
+  - Example: altitude = -5.0m in mission = dive to 5 meters deep
 - ✓ AP_Baro density parameter — User can tune `BARO_SPEC_GRAV` in GCS for water type
 - **Note**: TECS may need gain tuning for marine dynamics (slower response). Configurable via TECS_* parameters.
 
@@ -220,8 +197,6 @@ void Plane::stabilize_yaw_heading(void) {
 **Note**: This reuses the existing `yawController` PID that was designed for coordinated turns. For AUV, it now provides primary heading control instead of coordination.
 
 ---
-
-### 3. Arbitrary Fin Allocation System
 
 ### 3. Arbitrary Fin Allocation System
 
@@ -437,93 +412,6 @@ This allows parameters to reference fin channels consistently.
 7. **`libraries/AP_L1_Control/`** (optional)
    - Adapt to output heading/bearing instead of roll
 
-## Files Summary
-
-### Files to Create (New)
-- `libraries/AP_DepthSensor/`
-- `libraries/AP_UECS/`
-- `libraries/AP_LeakDetector/`
-- `libraries/AP_DVL/`
-- `libraries/AP_Ballast/`
-- `ArduPlane/mode_depth_hold.cpp`
-- `ArduPlane/mode_surface.cpp`
-- `ArduPlane/mode_dive.cpp`
-- `ArduPlane/emergency_surface.cpp`
-- `ArduPlane/dead_reckoning.cpp`
-
-### Files to Heavily Modify (Conditional Compilation)
-- `ArduPlane/ArduPlane.cpp` - Scheduler
-- `ArduPlane/Plane.h` - Main class
-- `ArduPlane/Attitude.cpp` - Controllers
-- `ArduPlane/navigation.cpp` - Navigation
-- `ArduPlane/servos.cpp` - Output
-- `ArduPlane/Parameters.h/cpp` - Parameters
-- `ArduPlane/failsafe.cpp` - Safety
-- `ArduPlane/mode_auto.cpp` - AUTO mode
-
-### Files to Lightly Modify
-- All `mode_*.cpp` files - Add AUV checks
-- `ArduPlane/config.h` - Feature flags
-- `ArduPlane/defines.h` - AUV enums
-- `wscript` - Build configuration
-
-## Estimated Effort
-
-- **Total Development**: 12-16 weeks for core functionality
-- **Testing & Validation**: 8-12 weeks
-- **Documentation**: 2-3 weeks
-- **Total Project**: 22-31 weeks (5.5-7.5 months)
-
-This assumes:
-- Experienced ArduPilot developer
-- Access to simulation environment
-- Access to test hardware
-- No major architectural changes required
-Implementation Checklist
-
-### Phase 1: Depth Control (1-2 weeks)
-- [ ] Add depth tracking variables to `Plane.h`
-- [ ] Create/modify `depth.cpp` to read from MS5611 (positive depth = down)
-- [ ] Implement `calc_depth_pitch()` in `Attitude.cpp`
-- [ ] Add simple depth PID controller
-- [ ] Test depth hold in SITL
-
-### Phase 2: Yaw Navigation (1-2 weeks)  
-- [ ] Implement `calc_nav_yaw()` in `navigation.cpp`
-- [ ] Implement `stabilize_yaw_heading()` in `Attitude.cpp`
-- [ ] Modify L1 controller or create bearing-based navigation
-- [ ] Modify mode `update()` functions to call yaw instead of roll
-- [ ] Test waypoint following in SITL
-
-### Phase 3: Fin Allocation (2-3 weeks)
-- [ ] Create `fin_allocation.cpp/h` files
-- [ ] Implement allocation matrix and parameters
-- [ ] Add fin configuration parameters to `Parameters.h`
-- [ ] Modify `servos_output()` to call fin allocation
-- [ ] Test with different fin configurations (+, X, etc.)
-- [ ] Add parameter loading/validation
-
----
-
-## Phase 4: Integration & Testing
-
-### 4.1 Testing in SITL (Software-In-The-Loop)
-**Setup**:
-```bash
-cd ArduPlane
-../Tools/autotest/autotest.py --sim SIL --frame quadplane-tailsitter
-```
-
-**Test waypoint mission with depth targets**:
-```lua
--- In Lua mission script (future: create test mission file)
--- Each waypoint has altitude field (now interpreted as depth)
-
-nav_alt[1] = 5.0    -- 5m depth
-nav_alt[2] = 10.0   -- 10m depth
-nav_alt[3] = 15.0   -- 15m depth
-```
-
 ### 4.2 Failsafe Behavior (Safety-Critical)
 **File**: [ArduPlane/failsafe.cpp](ArduPlane/failsafe.cpp)
 
@@ -533,20 +421,24 @@ void Plane::failsafe_check(void) {
 #ifdef AUV_MODE
     if (is_auv_mode) {
         // Check if depth exceeds safe limit
-        float current_depth = -relative_altitude * 100.0f;  // Convert to cm
-        float max_depth_cm = aparm.max_depth_cm.get() * 100.0f;
+        // Note: altitude is negative when underwater (more negative = deeper)
+        float current_depth = -barometer.get_altitude();  // Convert to positive depth in meters
+        float max_depth_m = aparm.max_depth_m.get();
         
-        if (current_depth > max_depth_cm) {
+        if (current_depth > max_depth_m) {
             // Exceed maximum depth - surface immediately
             set_mode(MODE_RTL);  // Or MODE_FLOAT (stay at surface)
             gcs().send_text(MAV_SEVERITY_CRITICAL, "Max depth exceeded - surfacing");
         }
         
-        // Check for pressure sensor failure (depth decreases unexpectedly)
+        // Check for pressure sensor failure (depth suddenly increases unexpectedly)
         static uint32_t last_depth_check_ms = 0;
+        static float min_depth_seen = FLT_MAX;
+        
         if (millis() - last_depth_check_ms > 1000) {
             if (current_depth < min_depth_seen) {
-                // Unlikely depth decrease could indicate sensor failure
+                // Depth is decreasing (altitude becoming less negative = going shallower unexpectedly)
+                // Could indicate sensor failure
                 min_depth_seen = current_depth;
             }
             last_depth_check_ms = millis();
@@ -569,8 +461,8 @@ Typical adjustments:
 - `TECS_TIME_CONST` - May need increase (slower marine dynamics)
 
 ### 4.4 Verification Checklist
-- [ ] Depth is read correctly from barometer (sign check: positive down)
-- [ ] Pitch command generates down-bow in water (elevator negative → pitch down)
+- [ ] Depth is read correctly from barometer (sign check: negative = deeper, 0 = surface)
+- [ ] Pitch command generates down-bow in water (elevator command negative → pitch down → deeper)
 - [ ] Yaw navigation follows waypoint bearing
 - [ ] Fin allocation outputs to correct channels in configured geometry
 - [ ] TECS maintains depth at setpoint (±0.5m tolerance)
@@ -606,42 +498,12 @@ These are deferred beyond Phase 1 but documented for roadmap:
 
 ---
 
-## Implementation Timeline
-
-**Phase 1 (Weeks 1)**: Depth control infrastructure (simplified)
-- Configure barometer as water sensor (type=BARO_TYPE_WATER)
-- Negate sink_rate in update_alt() for sign convention
-- Test in SITL with constant-depth waypoints
-- *Reduced from 2 weeks because AP_Baro already handles depth calculation*
-
-**Phase 2 (Weeks 2–3)**: Yaw navigation
-- Add calc_nav_yaw() function
-- Modify stabilize() for yaw control
-- Update all flight modes to use yaw
-- Test waypoint following with bearing constraints
-
-**Phase 3 (Weeks 4–6)**: Fin allocation
-- Implement FinAllocation class
-- Define fin servo channels and parameters
-- Integrate with servos_output()
-- Test different fin configurations in SITL
-
-**Phase 4 (Weeks 7–8)**: Integration & failsafe
-- Implement depth failsafe
-- TECS parameter tuning
-- Full mission testing
-- Log analysis and verification
-
-**Total Phase 1 Estimate**: 6–8 weeks (1 person-month, reduced from 8–9 weeks)
-
----
-
 ## File Summary
 
 | File | Purpose | Type | Effort |
 |------|---------|------|--------|
 | Plane.h | Add is_auv_mode flag | Modify | Low |
-| ArduPlane.cpp | Configure barometer for water sensor; negate sink_rate in update_alt() | Modify | Low |
+| ArduPlane.cpp | Configure barometer for water sensor in init() | Modify | Low |
 | navigation.cpp | Add calc_nav_yaw() function | Modify | Medium |
 | Attitude.cpp | Add stabilize_yaw_heading(), modify stabilize() | Modify | Medium |
 | mode_auto.cpp | Call calc_nav_yaw() instead of calc_nav_roll() in AUV mode | Modify | Low |
@@ -656,24 +518,11 @@ These are deferred beyond Phase 1 but documented for roadmap:
 - ✓ barometer_to_depth() function — Not needed; AP_Baro calculates depth when type=BARO_TYPE_WATER
 - ✓ water_density parameter — Use AP_Baro's existing BARO_SPEC_GRAV parameter instead
 - ✓ altitude.cpp modifications — No custom depth conversion function needed
+- ✓ sink_rate negation — AP_Baro already returns correct sign; no frame conversion needed
 
 ---
 
 ## Design Rationale
-
-**Why minimal changes to ArduPlane core?**
-- Reuses altitude infrastructure (barometer, TECS, missions)
-- Flips sign semantics at single conversion point (update_alt)
-- No changes to physics engines or core control loops
-- Aircraft functionality completely preserved (ifdef guards)
-
-**Why leverage AP_Baro instead of custom depth calculation?**
-- AP_Baro already calculates depth for water sensors (type=BARO_TYPE_WATER)
-- Formula: `depth = (ground_pressure - corrected_pressure) / 9800.0f / _specific_gravity`
-- Specific gravity parameter already exists (_SPEC_GRAV: 1.0 fresh, 1.024 salt)
-- Eliminates custom barometer_to_depth() function and parameters
-- Reduces Phase 1 effort from 2 weeks to 1 week
-- Tested on ArduSub (proven water sensor handling)
 
 **Why nav_yaw_cd instead of modifying L1?**
 - L1 already outputs correct bearing/lateral acceleration
@@ -709,9 +558,7 @@ These are deferred beyond Phase 1 but documented for roadmap:
 
 ## Notes
 
-- **Coordinate frame**: AUV uses NED (North-East-Down) with positive depth = down. Barometer returns depth directly when type=BARO_TYPE_WATER.
 - **Specific Gravity**: Use AP_Baro's existing `BARO_SPEC_GRAV` parameter (default 1.0 for fresh, 1.024 for salt water). Configurable via GCS or parameters.txt.
-- **Pressure sensor**: MS5611 barometer works at depths up to ~80m; MS5837 (used in ArduSub) rated to 300m+. Both supported via AP_Baro.
 - **Thrust control**: Throttle (0–100%) already maps to motor speed. TECS controls throttle for depth/pitch coordination.
 - **Yaw stability**: AUV may need lower yaw gain than aircraft (less roll authority). Tuned during Phase 4 testing.
 - **Barometer type configuration**: Set via `barometer.set_type(0, AP_Baro::BARO_TYPE_WATER)` during init, or configure via parameters if available.
