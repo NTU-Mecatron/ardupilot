@@ -55,13 +55,11 @@ void Plane::init_ardupilot()
     // init baro
     barometer.init();
 
-    // Configure barometer for AUV depth measurement if in AUV mode
-    if (is_auv_mode) {
-        // Set barometer type to BARO_TYPE_WATER for depth measurement
-        // This makes the barometer calculate depth (positive down) instead of altitude
-        // Similar to how ArduSub configures the barometer
-        barometer.set_type(0, AP_Baro::BARO_TYPE_WATER);
-        gcs().send_text(MAV_SEVERITY_INFO, "AUV Mode: Barometer configured for depth sensing");
+    if (g.auv_mode == 1) {
+        is_auv_mode = true;
+        gcs().send_text(MAV_SEVERITY_INFO, "AUV Mode Enabled");
+    } else {
+        is_auv_mode = false;
     }
 
     // initialise rangefinder

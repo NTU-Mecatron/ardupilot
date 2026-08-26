@@ -512,6 +512,13 @@ const AP_Param::Info Plane::var_info[] = {
     // @User: Advanced
     GSCALAR(initial_mode,        "INITIAL_MODE",     Mode::Number::MANUAL),
 
+    // @Param: AUV_MODE
+    // @DisplayName: Enable AUV mode
+    // @Description: Enable Autonomous Underwater Vehicle mode for submerged operations. When enabled, uses yaw for waypoint navigation instead of roll, and configures barometer for depth measurement.
+    // @Values: 0:Disabled,1:Enabled
+    // @User: Standard
+    GSCALAR(auv_mode,                "AUV_MODE",  0),
+
     // @Param: ROLL_LIMIT_DEG
     // @DisplayName: Maximum Bank Angle
     // @Description: Maximum bank angle commanded in modes with stabilized limits. Increase this value for sharper turns, but decrease to prevent accelerated stalls.

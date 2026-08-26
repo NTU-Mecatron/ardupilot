@@ -357,6 +357,9 @@ public:
         k_param_acro_yaw_rate,
         k_param_takeoff_throttle_max_t,
         k_param_autotune_options,
+
+        // Special AUV parameters
+        k_param_auv_mode = 265, // Enable Autonomous Underwater Vehicle mode for submerged operations. When enabled, uses yaw for waypoint navigation instead of roll, and configures barometer for depth measurement.
     };
 
     AP_Int16 format_version;
@@ -420,6 +423,7 @@ public:
     AP_Int8 flight_mode5;
     AP_Int8 flight_mode6;
     AP_Int8 initial_mode;
+    AP_Int8 auv_mode;                 // Enable AUV (torpedo) mode
 
     // Navigational manoeuvring limits
     //

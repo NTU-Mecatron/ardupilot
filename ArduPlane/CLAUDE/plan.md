@@ -51,18 +51,20 @@ bool is_auv_mode = false;  // Runtime flag to enable AUV control allocation
 **Configuration in init() or setup:**
 ```cpp
 // In ArduPlane.cpp init() or similar startup location
-#ifdef AUV_MODE
 if (is_auv_mode) {
     // Configure AP_Baro for water depth measurement (like ArduSub does)
     // Set barometer to BARO_TYPE_WATER (calculates depth instead of altitude)
     barometer.set_type(0, AP_Baro::BARO_TYPE_WATER);  // Set primary barometer as water sensor
 }
-#endif
 ```
+
+Add a parameter called `AUV_MODE` to enable/disable AUV mode at runtime (which will also set the `is_auv_mode` flag).
 
 ### 2. Assuming T fins (like an aircraft), test out how original ArduPlane control applies to TorpAUV in terms of diving and maintaining depth
 
-Keep `ArduPlane/mode_takeoff.cpp`; takeoff altitude can be set to negative to make it work for the AUV. By default, after taking off, the AUV will loiter at a distance around the launch point, but we will skip it for now and make it keep go straight. Purpose is to test out the control flow and see if it can maintain depth.
+Keep `ArduPlane/mode_takeoff.cpp`; takeoff altitude can be set to negative to make it work for the AUV. 
+
+Modify `mode_takeoff` such that after taking off, the vehicle will go straight. Purpose is to test out the control flow and see if it can maintain depth.
 
 No waypoint/yaw navigation here as it requires changing from roll-to-turn to yaw-to-turn.
 
