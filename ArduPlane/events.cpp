@@ -75,6 +75,7 @@ void Plane::failsafe_short_on_event(enum failsafe_state fstype, ModeReason reaso
     case Mode::Number::AVOID_ADSB:
     case Mode::Number::GUIDED:
     case Mode::Number::LOITER:
+    case Mode::Number::DIVE:
     case Mode::Number::THERMAL:
         if (g.fs_action_short != FS_ACTION_SHORT_BESTGUESS) { // if acton = 0(BESTGUESS) this group of modes take no action
             failsafe.saved_mode_number = control_mode->mode_number();
@@ -125,6 +126,7 @@ void Plane::failsafe_long_on_event(enum failsafe_state fstype, ModeReason reason
     case Mode::Number::CIRCLE:
     case Mode::Number::LOITER:
     case Mode::Number::THERMAL:
+    case Mode::Number::DIVE:
     case Mode::Number::TAKEOFF:
         if (plane.flight_stage == AP_FixedWing::FlightStage::TAKEOFF && !(g.fs_action_long == FS_ACTION_LONG_GLIDE || g.fs_action_long == FS_ACTION_LONG_PARACHUTE)) {
             // don't failsafe if in inital climb of TAKEOFF mode and FS action is not parachute or glide

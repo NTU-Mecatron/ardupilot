@@ -54,6 +54,7 @@ public:
 #if HAL_QUADPLANE_ENABLED
         LOITER_ALT_QLAND = 25,
 #endif
+        DIVE          = 26,
     };
 
     // Constructor
@@ -793,6 +794,48 @@ protected:
     Location start_loc;
 
     bool _enter() override;
+};
+
+class ModeDive: public Mode
+{
+public:
+    ModeDive();
+
+    Number mode_number() const override { return Number::DIVE; }
+    const char *name() const override { return "DIVE"; }
+    const char *name4() const override { return "DIVE"; }
+
+    // methods that affect movement of the vehicle in this mode
+    void update() override;
+
+    void navigate() override {};
+
+    bool allows_throttle_nudging() const override { return true; }
+
+    bool does_auto_navigation() const override { return true; }
+
+    bool does_auto_throttle() const override { return true; }
+
+    // var_info for holding parameter information
+    static const struct AP_Param::GroupInfo var_info[];
+
+    AP_Float target_depth;
+    AP_Float dive_pitch;
+
+protected:
+    bool _enter() override;
+
+private:
+    // Dive state machine
+    enum DiveState {
+        ACCELERATING,
+        PITCHING_DOWN,
+        LEVEL_OUT
+    };
+    DiveState current_dive_state = ACCELERATING;
+    
+    Location start_loc;
+    bool dive_started;
 };
 
 #if HAL_SOARING_ENABLED

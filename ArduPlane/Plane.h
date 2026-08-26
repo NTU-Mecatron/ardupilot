@@ -169,6 +169,7 @@ public:
     friend class ModeQAcro;
     friend class ModeQAutotune;
     friend class ModeTakeoff;
+    friend class ModeDive;
     friend class ModeThermal;
     friend class ModeLoiterAltQLand;
 
@@ -308,6 +309,7 @@ private:
 #endif  // QAUTOTUNE_ENABLED
 #endif  // HAL_QUADPLANE_ENABLED
     ModeTakeoff mode_takeoff;
+    ModeDive mode_dive;
 #if HAL_SOARING_ENABLED
     ModeThermal mode_thermal;
 #endif
