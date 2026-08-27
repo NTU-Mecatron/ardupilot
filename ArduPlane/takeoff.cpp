@@ -106,7 +106,11 @@ bool Plane::auto_takeoff_check(void)
 
     if (do_takeoff_attitude_check) {
         // Check aircraft attitude for bad launch
-        if (ahrs.pitch_sensor <= -3000 || ahrs.pitch_sensor >= 4500 ||
+        int32_t min_pitch = -3000;
+        if (plane.is_auv_mode) {
+            min_pitch = -8000; // Allow steep dives for AUV
+        }
+        if (ahrs.pitch_sensor <= min_pitch || ahrs.pitch_sensor >= 4500 ||
             (!fly_inverted() && labs(ahrs.roll_sensor) > 3000)) {
             gcs().send_text(MAV_SEVERITY_WARNING, "Bad launch AUTO");
             takeoff_state.accel_event_counter = 0;
@@ -188,8 +192,14 @@ void Plane::takeoff_calc_pitch(void)
     if (ahrs.using_airspeed_sensor()) {
         int16_t takeoff_pitch_min_cd = get_takeoff_pitch_min_cd();
         calc_nav_pitch();
-        if (nav_pitch_cd < takeoff_pitch_min_cd) {
-            nav_pitch_cd = takeoff_pitch_min_cd;
+        if (plane.is_auv_mode) {
+            if (nav_pitch_cd > takeoff_pitch_min_cd) {
+                nav_pitch_cd = takeoff_pitch_min_cd;
+            }
+        } else {
+            if (nav_pitch_cd < takeoff_pitch_min_cd) {
+                nav_pitch_cd = takeoff_pitch_min_cd;
+            }
         }
     } else {
         if (g.takeoff_rotate_speed > 0) {
@@ -198,7 +208,11 @@ void Plane::takeoff_calc_pitch(void)
             nav_pitch_cd = constrain_int32(nav_pitch_cd, 500, auto_state.takeoff_pitch_cd); 
         } else {
             // Doing hand or catapult launch so need at least 5 deg pitch to prevent initial height loss
-            nav_pitch_cd = MAX(auto_state.takeoff_pitch_cd, 500);
+            if (plane.is_auv_mode) {
+                nav_pitch_cd = auto_state.takeoff_pitch_cd;
+            } else {
+                nav_pitch_cd = MAX(auto_state.takeoff_pitch_cd, 500);
+            }
         }
     }
 

@@ -9,7 +9,7 @@ const AP_Param::GroupInfo ModeTakeoff::var_info[] = {
     // @Param: ALT
     // @DisplayName: Takeoff mode altitude
     // @Description: This is the target altitude for TAKEOFF mode
-    // @Range: 0 200
+    // @Range: -200 200
     // @Increment: 1
     // @Units: m
     // @User: Standard
@@ -18,7 +18,7 @@ const AP_Param::GroupInfo ModeTakeoff::var_info[] = {
     // @Param: LVL_ALT
     // @DisplayName: Takeoff mode altitude level altitude
     // @Description: This is the altitude below which the wings are held level for TAKEOFF and AUTO modes. Below this altitude, roll demand is restricted to LEVEL_ROLL_LIMIT. Normal-flight roll restriction resumes above TKOFF_LVL_ALT*3 or TKOFF_ALT, whichever is lower. Roll limits are scaled while between TKOFF_LVL_ALT and those altitudes for a smooth transition.
-    // @Range: 0 50
+    // @Range: -50 50
     // @Increment: 1
     // @Units: m
     // @User: Standard
@@ -27,7 +27,7 @@ const AP_Param::GroupInfo ModeTakeoff::var_info[] = {
     // @Param: LVL_PITCH
     // @DisplayName: Takeoff mode altitude initial pitch
     // @Description: This is the target pitch for the initial climb to TKOFF_LVL_ALT
-    // @Range: 0 30
+    // @Range: -45 30
     // @Increment: 1
     // @Units: deg
     // @User: Standard
@@ -46,7 +46,7 @@ const AP_Param::GroupInfo ModeTakeoff::var_info[] = {
     // @DisplayName: Takeoff run pitch demand
     // @Description: Degrees of pitch angle demanded during the takeoff run before speed reaches TKOFF_ROTATE_SPD. For taildraggers set to 3-point ground pitch angle and use TKOFF_TDRAG_ELEV to prevent nose tipover. For nose-wheel steer aircraft set to the ground pitch angle and if a reduction in nose-wheel load is required as speed rises, use a positive offset in TKOFF_GND_PITCH of up to 5 degrees above the angle on ground, starting at the mesured pitch angle and incrementing in 1 degree steps whilst checking for premature rotation and takeoff with each increment. To increase nose-wheel load, use a negative TKOFF_TDRAG_ELEV and refer to notes on TKOFF_TDRAG_ELEV before making adjustments.
     // @Units: deg
-    // @Range: -5.0 10.0
+    // @Range: -15.0 10.0
     // @Increment: 0.1
     // @User: Standard
     AP_GROUPINFO("GND_PITCH", 5, ModeTakeoff, ground_pitch, 5),
@@ -80,17 +80,24 @@ void ModeTakeoff::update()
     const float alt = target_alt;
     const float dist = target_dist;
     if (!takeoff_started) {
-        const uint16_t altitude = plane.relative_ground_altitude(false,true);
+        const float altitude = plane.relative_ground_altitude(false,true);
         const float direction = degrees(ahrs.get_yaw());
         // see if we will skip takeoff as already flying
         if (plane.is_flying() && (millis() - plane.started_flying_ms > 10000U) && ahrs.groundspeed() > 3) {
-            if (altitude >= alt) {
-                gcs().send_text(MAV_SEVERITY_INFO, "Above TKOFF alt - loitering");
+            bool target_reached = false;
+            if (plane.is_auv_mode) {
+                target_reached = (altitude <= alt);
+            } else {
+                target_reached = (altitude >= alt);
+            }
+
+            if (target_reached) {
+                gcs().send_text(MAV_SEVERITY_INFO, plane.is_auv_mode ? "Below TKOFF depth - loitering" : "Above TKOFF alt - loitering");
                 plane.next_WP_loc = plane.current_loc;
                 takeoff_started = true;
                 plane.set_flight_stage(AP_FixedWing::FlightStage::NORMAL);
             } else {
-                gcs().send_text(MAV_SEVERITY_INFO, "Climbing to TKOFF alt then loitering");
+                gcs().send_text(MAV_SEVERITY_INFO, plane.is_auv_mode ? "Diving to TKOFF depth then loitering" : "Climbing to TKOFF alt then loitering");
                 plane.next_WP_loc = plane.current_loc;
                 plane.next_WP_loc.alt += ((alt - altitude) *100);
                 plane.next_WP_loc.offset_bearing(direction, dist);
@@ -114,8 +121,13 @@ void ModeTakeoff::update()
             plane.set_flight_stage(AP_FixedWing::FlightStage::TAKEOFF);
 
             if (!plane.throttle_suppressed) {
-                gcs().send_text(MAV_SEVERITY_INFO, "Takeoff to %.0fm for %.1fm heading %.1f deg",
-                                alt, dist, direction);
+                if (plane.is_auv_mode) {
+                    gcs().send_text(MAV_SEVERITY_INFO, "Takeoff dive to %.0fm for %.1fm heading %.1f deg",
+                                    alt, dist, direction);
+                } else {
+                    gcs().send_text(MAV_SEVERITY_INFO, "Takeoff to %.0fm for %.1fm heading %.1f deg",
+                                    alt, dist, direction);
+                }
                 takeoff_started = true;
             }
         }
@@ -127,8 +139,15 @@ void ModeTakeoff::update()
     // reset the loiter waypoint target to be correct bearing and dist
     // from starting location in case original yaw used to set it was off due to EKF
     // reset or compass interference from max throttle
+    bool alt_reached = false;
+    if (plane.is_auv_mode) {
+        alt_reached = (plane.current_loc.alt - start_loc.alt <= level_alt*100);
+    } else {
+        alt_reached = (plane.current_loc.alt - start_loc.alt >= level_alt*100);
+    }
+
     if (plane.flight_stage == AP_FixedWing::FlightStage::TAKEOFF &&
-        (plane.current_loc.alt - start_loc.alt >= level_alt*100 ||
+        (alt_reached ||
          start_loc.get_distance(plane.current_loc) >= dist)) {
         // reset the target loiter waypoint using current yaw which should be close to correct starting heading
         const float direction = start_loc.get_bearing_to(plane.current_loc) * 0.01;
