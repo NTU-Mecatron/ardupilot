@@ -77,7 +77,7 @@ void AP_AltitudeController::reset()
 void AP_AltitudeController::update()
 {
     _calc_vertical_acc();
-    _calc_pitch_rate_from_vertical_acc();
+    _calc_pitch_rate();
 }
 
 void AP_AltitudeController::_calc_vertical_acc()
@@ -119,10 +119,8 @@ void AP_AltitudeController::_calc_vertical_acc()
 
 /// Calculate desired pitch rate from vertical acceleration
 /// Formula: pitch_rate = vertical_acc / speed
-void AP_AltitudeController::_calc_pitch_rate_from_vertical_acc()
-{
-    const float GRAVITY = 9.81f;
-    
+void AP_AltitudeController::_calc_pitch_rate()
+{  
     // Get current airspeed estimate
     float aspeed = 0;
     if (!_ahrs.airspeed_estimate(aspeed)) {

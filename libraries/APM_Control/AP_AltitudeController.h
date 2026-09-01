@@ -27,17 +27,17 @@ public:
     float get_altitude_target() const { return _target_alt_cm; }
 
     /// Update altitude controller
-    /// Must be called at 50Hz
+    /// Must be called at minimum 50Hz
     /// Internally retrieves altitude and climb rate from AHRS
     void update();
 
     /// Get desired vertical acceleration, for reporting purpose only
     /// @return  Desired vertical acceleration in m/s^2 (positive = up)
-    float get_desired_vertical_acceleration() const { return _desired_vertical_accel; }
+    float get_vertical_acc() const { return _desired_vertical_accel; }
 
     /// Get desired pitch rate, to be used by the pitch controller
     /// @return  Desired pitch rate in centidegrees/second (positive = nose up)
-    float get_desired_pitch_rate() const { return _desired_pitch_rate_cd; }
+    float get_pitch_rate() const { return _desired_pitch_rate_cd; }
 
     /// Load parameters from eeprom
     void load_gains();
@@ -46,9 +46,11 @@ public:
     void reset();
 
 private:
-    // Internal calculation methods
+    // Calculate desired vertical acceleration based on altitude error
     void _calc_vertical_acc();
-    void _calc_pitch_rate_from_vertical_acc();
+
+    // Calculate desired pitch rate based on desired vertical acceleration
+    void _calc_pitch_rate();
     // AHRS reference for getting altitude and climb rate
     AP_AHRS &_ahrs;
 
