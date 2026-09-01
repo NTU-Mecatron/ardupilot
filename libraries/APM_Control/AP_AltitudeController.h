@@ -8,6 +8,7 @@
 #include <AP_Param/AP_Param.h>
 #include <AC_PID/AC_PID.h>
 #include <AP_Math/AP_Math.h>
+#include <AP_AHRS/AP_AHRS.h>
 
 class AP_AltitudeController {
 public:
@@ -27,18 +28,16 @@ public:
 
     /// Update altitude controller
     /// Must be called at 50Hz
-    /// @param current_alt_cm   Current altitude in centimeters
-    /// @param current_climb_rate_cms   Current climb rate in cm/s (positive = climbing)
-    /// @param dt   Time delta in seconds
-    void update(float current_alt_cm, float current_climb_rate_cms, float dt);
+    /// Internally retrieves altitude and climb rate from AHRS
+    void update();
 
-    /// Get desired vertical acceleration
+    /// Get desired vertical acceleration, for reporting purpose only
     /// @return  Desired vertical acceleration in m/s^2 (positive = up)
     float get_desired_vertical_acceleration() const { return _desired_vertical_accel; }
 
-    /// Get desired pitch angle
-    /// @return  Desired pitch in centidegrees (positive = nose up)
-    float get_desired_pitch() const { return _desired_pitch_cd; }
+    /// Get desired pitch rate, to be used by the pitch controller
+    /// @return  Desired pitch rate in centidegrees/second (positive = nose up)
+    float get_desired_pitch_rate() const { return _desired_pitch_rate_cd; }
 
     /// Load parameters from eeprom
     void load_gains();
@@ -47,17 +46,23 @@ public:
     void reset();
 
 private:
+    // Internal calculation methods
+    void _calc_vertical_acc();
+    void _calc_pitch_rate_from_vertical_acc();
+    // AHRS reference for getting altitude and climb rate
+    AP_AHRS &_ahrs;
+
     // PID controller for vertical acceleration (depth control)
-    AC_PID  _pid_alt;
+    AC_PID _pid_alt{0.05f, 0.01f, 0.005f, 0.0f, 1.0f, 0.02f};
 
     // Parameters
-    AP_Float    _buoyancy_ff;          // Buoyancy feedforward term (m/s^2)
-    AP_Float    _pitch_max;            // Maximum pitch angle (degrees)
-    AP_Float    _vertical_accel_max;   // Maximum vertical acceleration (m/s^2)
+    AP_Float _buoyancy_ff;             // Buoyancy feedforward term (m/s^2)
+    AP_Float _pitch_max;               // Maximum pitch angle (degrees)
+    AP_Float _vertical_accel_max;      // Maximum vertical acceleration (m/s^2)
 
     // State variables
     float   _target_alt_cm;             // Target altitude in cm
     float   _desired_vertical_accel;    // Desired vertical acceleration in m/s^2
-    float   _desired_pitch_cd;          // Desired pitch angle in centidegrees
-    float   _alt_error_cm;              // Altitude error in cm
+    float   _desired_pitch_rate_cd;     // Desired pitch rate in centidegrees/sec
+    uint64_t _update_last_usec;         // Time of last update in microseconds
 };

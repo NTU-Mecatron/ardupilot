@@ -3,8 +3,7 @@
 /// @author ArduPilot Team
 
 #include "AP_AltitudeController.h"
-#include <AP_Logger/AP_Logger.h>
-#include <GCS_MAVLink/GCS.h>
+#include <AP_HAL/AP_HAL.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -43,11 +42,11 @@ const AP_Param::GroupInfo AP_AltitudeController::var_info[] = {
 
 // Constructor
 AP_AltitudeController::AP_AltitudeController() :
-    _pid_alt(1.0f, 0.1f, 0.05f, 0.0f, 1.0f, 0.02f),
+    _ahrs(AP_AHRS::get_singleton()),
     _target_alt_cm(0),
     _desired_vertical_accel(0),
-    _desired_pitch_cd(0),
-    _alt_error_cm(0)
+    _desired_pitch_rate_cd(0),
+    _update_last_usec(0)
 {
     AP_Param::setup_object_defaults(this, var_info);
 }
@@ -70,74 +69,78 @@ void AP_AltitudeController::reset()
 {
     _pid_alt.reset_I();
     _desired_vertical_accel = 0;
-    _desired_pitch_cd = 0;
-    _alt_error_cm = 0;
+    _desired_pitch_rate_cd = 0;
 }
 
 /// Update altitude controller
 /// Called at 50Hz
-void AP_AltitudeController::update(float current_alt_cm, float current_climb_rate_cms, float dt)
+void AP_AltitudeController::update()
 {
-    // Calculate altitude error (positive = vehicle is below target)
-    _alt_error_cm = _target_alt_cm - current_alt_cm;
+    _calc_vertical_acc();
+    _calc_pitch_rate_from_vertical_acc();
+}
 
-    // Convert climb rate from cm/s to m/s
-    float climb_rate_ms = current_climb_rate_cms * 0.01f;
+void AP_AltitudeController::_calc_vertical_acc()
+{
+    // Calculate time since last update
+    uint64_t now = AP_HAL::micros64();
+    float dt = (now - _update_last_usec) * 1.0e-6f;
+    _update_last_usec = now;
 
-    // PID controller computes desired vertical acceleration
-    // Error is in cm, we need to convert to meters
-    float alt_error_m = _alt_error_cm * 0.01f;
-    
-    _desired_vertical_accel = _pid_alt.get_pid(alt_error_m, dt);
+    // Reset dt on first call or if dt is too large (indicates a long delay)
+    if (dt > 1.0f) {
+        dt = 0.02f;  // Assume 50Hz update rate
+    }
 
-    // Add buoyancy feedforward compensation
-    // This helps maintain depth against buoyancy forces
-    _desired_vertical_accel += _buoyancy_ff;
+    // Get current height above home from AHRS in meters (positive = up)
+    // get_relative_position_D_home returns down distance from home, so negate it
+    float current_alt_m = 0;
+    _ahrs.get_relative_position_D_home(current_alt_m);
+    current_alt_m *= -1.0f;  // Convert from down to up
+
+    float target_alt_m = _target_alt_cm * 0.01f;
+
+    // Update PID controller with altitude error
+    // Input: target (desired altitude error = 0), measurement (current altitude error)
+    // This computes: output = P*error + I*integral(error) + D*derivative(error)
+    float pid_output = _pid_alt.update_all(target_alt_m, current_alt_m, dt, true);
+
+    // Get individual PID components
+    float ff_term = _pid_alt.get_ff();
+
+    // Combine PID output with feedforward terms
+    _desired_vertical_accel = pid_output + ff_term + _buoyancy_ff;
 
     // Constrain desired vertical acceleration
     _desired_vertical_accel = constrain_float(_desired_vertical_accel, 
                                              -_vertical_accel_max, 
                                              _vertical_accel_max);
+}
 
-    // Convert desired vertical acceleration to pitch angle
-    // Using simple kinematic relationship: a = g * sin(pitch)
-    // Therefore: pitch = asin(a / g)
-    // For small angles and AUV speeds, we use: pitch_rad ≈ a / g
+/// Calculate desired pitch rate from vertical acceleration
+/// Formula: pitch_rate = vertical_acc / speed
+void AP_AltitudeController::_calc_pitch_rate_from_vertical_acc()
+{
     const float GRAVITY = 9.81f;
     
-    float pitch_rad = _desired_vertical_accel / GRAVITY;
-    
-    // Constrain pitch angle to maximum
-    float pitch_max_rad = radians(_pitch_max);
-    pitch_rad = constrain_float(pitch_rad, -pitch_max_rad, pitch_max_rad);
-    
-    // Convert to centidegrees
-    _desired_pitch_cd = degrees(pitch_rad) * 100.0f;
-
-    // Log data for debugging
-    AP_Logger *logger = AP_Logger::get_singleton();
-    if (logger && logger->logging_enabled()) {
-        struct {
-            LOG_PACKET_HEADER;
-            uint32_t time_ms;
-            float alt_target;
-            float alt_current;
-            float alt_error;
-            float vert_accel;
-            float pitch_desired;
-            float climb_rate;
-            float buoy_ff;
-        } pkt = {
-            LOG_PACKET_HEADER_INIT(LOG_ALTCTRL_MSG),
-            time_ms : AP_HAL::millis(),
-            alt_target : _target_alt_cm,
-            alt_current : current_alt_cm,
-            alt_error : _alt_error_cm,
-            vert_accel : _desired_vertical_accel,
-            pitch_desired : _desired_pitch_cd,
-            climb_rate : climb_rate_ms,
-            buoy_ff : _buoyancy_ff
-        };
-        logger->WriteCriticalBlock(&pkt, sizeof(pkt));
+    // Get current airspeed estimate
+    float aspeed = 0;
+    if (!_ahrs.airspeed_estimate(aspeed)) {
+        // If no airspeed available, use a default minimum speed
+        aspeed = 5.0f;  // m/s
     }
+    
+    // Ensure minimum airspeed to avoid division issues
+    aspeed = MAX(aspeed, 1.0f);
+    
+    // Calculate pitch rate: pitch_rate (rad/s) = vertical_acc / speed
+    float pitch_rate_rads = _desired_vertical_accel / aspeed;
+    
+    // Constrain pitch rate based on maximum pitch angle and speed
+    // Maximum pitch rate should be limited to avoid aggressive maneuvers
+    float max_pitch_rate_rads = radians(_pitch_max);  // Use pitch_max as rate limit proxy
+    pitch_rate_rads = constrain_float(pitch_rate_rads, -max_pitch_rate_rads, max_pitch_rate_rads);
+    
+    // Convert to centidegrees/second
+    _desired_pitch_rate_cd = degrees(pitch_rate_rads) * 100.0f;
 }
