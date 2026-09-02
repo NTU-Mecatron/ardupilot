@@ -217,7 +217,7 @@ private:
 #endif
 
     AP_AltitudeController alt_pitch_controller{ahrs};
-    AP_L1_Control L1_controller{ahrs};
+    AP_L1_Control L1_controller{ahrs, nullptr};
 
     // Attitude to servo controllers
     AP_RollController rollController{aparm};
