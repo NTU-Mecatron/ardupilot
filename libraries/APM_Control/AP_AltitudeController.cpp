@@ -29,6 +29,7 @@ AP_AltitudeController::AP_AltitudeController(AP_AHRS &ahrs) :
     _update_last_usec(0)
 {
     AP_Param::setup_object_defaults(this, var_info);
+    _pid_info = _pid_alt.get_pid_info();
 }
 
 /// Set target altitude
@@ -75,4 +76,7 @@ void AP_AltitudeController::update(float speed_scaler)
 
     // Convert to centidegrees
     _desired_pitch_cd = degrees(pitch_rad) * 100.0f;
+
+    // For logging purpose
+    _pid_info = _pid_alt.get_pid_info();
 }

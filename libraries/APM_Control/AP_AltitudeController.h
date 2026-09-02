@@ -37,6 +37,9 @@ public:
     /// Reset integral gain
     void reset_I();
 
+    /// Get pid info
+    const AP_PIDInfo& get_pid_info(void) const { return _pid_info; }
+
 private:
     // AHRS reference for getting altitude and climb rate
     AP_AHRS &_ahrs;
@@ -52,4 +55,6 @@ private:
     int32_t _target_alt_cm;             // Target altitude in cm
     int32_t _desired_pitch_cd;          // Desired pitch angle in centidegrees
     uint64_t _update_last_usec;         // Time of last update in microseconds
+
+    AP_PIDInfo _pid_info;                  // PID info for external access
 };
