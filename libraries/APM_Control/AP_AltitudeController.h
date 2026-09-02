@@ -23,13 +23,11 @@ public:
     // Parameter definitions
     static const struct AP_Param::GroupInfo var_info[];
 
-    /// Set target altitude
-    /// @param target_alt_cm    Target altitude in centimeters (positive = up)
-    void set_altitude_target(int32 target_alt_cm);
+    /// Target altitude in centimeters (positive = up)
+    void set_target_altitude(int32 target_alt_cm);
 
-    /// Get target altitude
-    /// @return  Target altitude in centimeters
-    int32 get_altitude_target() const { return _target_alt_cm; }
+    /// Get latest target altitude in centimeters (positive = up)
+    int32 get_target_altitude() const { return _target_alt_cm; }
 
     /// Update altitude controller
     /// Must be called at minimum 50Hz
@@ -38,7 +36,7 @@ public:
 
     /// Get desired pitch angle, to be used by the pitch controller
     /// @return  Desired pitch in centidegrees (positive = nose up)
-    int32 get_pitch() const { return _desired_pitch_cd; }
+    int32 get_pitch_demand() const { return _desired_pitch_cd; }
 
     /// Reset integral gain
     void reset_I();

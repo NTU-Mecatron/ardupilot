@@ -18,13 +18,6 @@ const AP_Param::GroupInfo AP_AltitudeController::var_info[] = {
     // @Increment: 1.0
     AP_GROUPINFO("BUOY_FF", 1, AP_AltitudeController, _buoyancy_ff_deg, -5.0f),
 
-    // @Param: PITCH_MAX
-    // @DisplayName: Maximum allowable pitch angle in magnitude (degrees)
-    // @Description: Maximum allowable pitch angle in magnitude (degrees)
-    // @Range: 5 20
-    // @Increment: 1
-    AP_GROUPINFO("PITCH_MAX", 2, AP_AltitudeController, _pitch_max, 15.0f),
-
     AP_GROUPEND
 };
 
@@ -39,7 +32,7 @@ AP_AltitudeController::AP_AltitudeController() :
 }
 
 /// Set target altitude
-void AP_AltitudeController::set_altitude_target(int32 target_alt_cm)
+void AP_AltitudeController::set_target_altitude(int32 target_alt_cm)
 {
     _target_alt_cm = target_alt_cm;
 }
@@ -80,10 +73,6 @@ void AP_AltitudeController::update(float speed_scaler)
     // speed_scaler = g.scaling_speed / current_speed, so we multiply by speed_scaler to adjust for current speed
     pitch_rad += radians(_buoyancy_ff_deg) * speed_scaler;
 
-    // Constrain pitch angle to maximum
-    float pitch_deg = degrees(pitch_rad);
-    pitch_deg = constrain_float(pitch_deg, -_pitch_max, _pitch_max);
-
     // Convert to centidegrees
-    _desired_pitch_cd = pitch_deg * 100.0f;
+    _desired_pitch_cd = degrees(pitch_rad) * 100.0f;
 }
