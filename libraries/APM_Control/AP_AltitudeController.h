@@ -28,16 +28,12 @@ public:
 
     /// Update altitude controller
     /// Must be called at minimum 50Hz
-    /// Internally retrieves altitude and climb rate from AHRS
-    void update();
+    /// Internally retrieves altitude from AHRS and computes desired pitch
+    void update(float speed_scaler);
 
-    /// Get desired vertical acceleration, for reporting purpose only
-    /// @return  Desired vertical acceleration in m/s^2 (positive = up)
-    float get_vertical_acc() const { return _desired_vertical_accel; }
-
-    /// Get desired pitch rate, to be used by the pitch controller
-    /// @return  Desired pitch rate in centidegrees/second (positive = nose up)
-    float get_pitch_rate() const { return _desired_pitch_rate_cd; }
+    /// Get desired pitch angle, to be used by the pitch controller
+    /// @return  Desired pitch in centidegrees (positive = nose up)
+    int32 get_pitch() const { return _desired_pitch_cd; }
 
     /// Load parameters from eeprom
     void load_gains();
@@ -46,11 +42,9 @@ public:
     void reset();
 
 private:
-    // Calculate desired vertical acceleration based on altitude error
+    // Calculate desired vertical acceleration and pitch based on altitude error
     void _calc_vertical_acc();
 
-    // Calculate desired pitch rate based on desired vertical acceleration
-    void _calc_pitch_rate();
     // AHRS reference for getting altitude and climb rate
     AP_AHRS &_ahrs;
 
@@ -58,13 +52,11 @@ private:
     AC_PID _pid_alt{0.05f, 0.01f, 0.005f, 0.0f, 1.0f, 0.02f};
 
     // Parameters
-    AP_Float _buoyancy_ff;             // Buoyancy feedforward term (m/s^2)
+    AP_Float _buoyancy_ff;             // Buoyancy feedforward term (degrees)
     AP_Float _pitch_max;               // Maximum pitch angle (degrees)
-    AP_Float _vertical_accel_max;      // Maximum vertical acceleration (m/s^2)
 
     // State variables
     float   _target_alt_cm;             // Target altitude in cm
-    float   _desired_vertical_accel;    // Desired vertical acceleration in m/s^2
-    float   _desired_pitch_rate_cd;     // Desired pitch rate in centidegrees/sec
+    int32   _desired_pitch_cd;          // Desired pitch angle in centidegrees
     uint64_t _update_last_usec;         // Time of last update in microseconds
 };
