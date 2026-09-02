@@ -217,7 +217,7 @@ void Plane::update_alt_pitch_controller(void)
 {
     bool should_run_alt_pitch_controller = true;
 #if HAL_QUADPLANE_ENABLED
-    if (quadplane.should_disable_TECS())    // TODO: change this to should disable alt_pitch controller
+    if (quadplane.should_disable_alt_pitch_controller())    // TODO: change this to should disable alt_pitch controller
         should_run_alt_pitch_controller = false;
 #endif
 
@@ -558,7 +558,7 @@ void Plane::update_alt()
 
     bool should_run_alt_pitch_controller = true;
 #if HAL_QUADPLANE_ENABLED
-    if (quadplane.should_disable_TECS()) {  // TODO: Change to pitch_alt syntax
+    if (quadplane.should_disable_alt_pitch_controller()) {  // TODO: Change to pitch_alt syntax
         should_run_alt_pitch_controller = false;
     }
 #endif

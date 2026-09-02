@@ -825,7 +825,7 @@ void Tailsitter_Transition::update()
         // during transition we ask TECS to use a synthetic
         // airspeed. Otherwise the pitch limits will throw off the
         // throttle calculation which is driven by pitch
-        plane.TECS_controller.use_synthetic_airspeed();
+        // plane.TECS_controller.use_synthetic_airspeed();
     }
 
     switch (transition_state) {
