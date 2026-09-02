@@ -20,11 +20,11 @@ public:
 
     /// Set target altitude
     /// @param target_alt_cm    Target altitude in centimeters (positive = up)
-    void set_altitude_target(float target_alt_cm);
+    void set_altitude_target(int32 target_alt_cm);
 
     /// Get target altitude
     /// @return  Target altitude in centimeters
-    float get_altitude_target() const { return _target_alt_cm; }
+    int32 get_altitude_target() const { return _target_alt_cm; }
 
     /// Update altitude controller
     /// Must be called at minimum 50Hz
@@ -35,28 +35,22 @@ public:
     /// @return  Desired pitch in centidegrees (positive = nose up)
     int32 get_pitch() const { return _desired_pitch_cd; }
 
-    /// Load parameters from eeprom
-    void load_gains();
-
-    /// Reset the controller
-    void reset();
+    /// Reset integral gain
+    void reset_I();
 
 private:
-    // Calculate desired vertical acceleration and pitch based on altitude error
-    void _calc_vertical_acc();
-
     // AHRS reference for getting altitude and climb rate
     AP_AHRS &_ahrs;
 
-    // PID controller for vertical acceleration (depth control)
-    AC_PID _pid_alt{0.05f, 0.01f, 0.005f, 0.0f, 1.0f, 0.02f};
+    // Default PI controller with IMAX, estimated with 1m error == 15 deg pitch, I gain capped at 10 deg
+    AC_PID _pid_alt{0.25f, 0.025f, 0.0f, 0.0f, 0.175f, 0.0f, 0.0f, 0.0f};
 
     // Parameters
-    AP_Float _buoyancy_ff;             // Buoyancy feedforward term (degrees)
+    AP_Float _buoyancy_ff_deg;             // Buoyancy feedforward term (degrees)
     AP_Float _pitch_max;               // Maximum pitch angle (degrees)
 
     // State variables
-    float   _target_alt_cm;             // Target altitude in cm
+    int32   _target_alt_cm;             // Target altitude in cm
     int32   _desired_pitch_cd;          // Desired pitch angle in centidegrees
     uint64_t _update_last_usec;         // Time of last update in microseconds
 };
