@@ -74,7 +74,7 @@ void AP_AltitudeController::update(float speed_scaler)
     // Update PID controller with altitude error
     // PID input is altitude in meters, output is desired pitch in radians
     bool limit_i_gain = true;
-    float pitch_rad = _pid_alt.update_all(target_alt_m, current_alt_m, dt, limit_i_gain);
+    float pitch_rad = _pid_alt.update_all(target_alt_m * speed_scaler, current_alt_m * speed_scaler, dt, limit_i_gain);
 
     // Actual feedforward pitch is dependent on speed; the higher speed, the lower pitch ff needed
     // speed_scaler = g.scaling_speed / current_speed, so we multiply by speed_scaler to adjust for current speed
