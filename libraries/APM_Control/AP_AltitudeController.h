@@ -13,7 +13,11 @@
 class AP_AltitudeController {
 public:
     // Constructor
-    AP_AltitudeController();
+    AP_AltitudeController(AP_AHRS &ahrs)
+        : _ahrs(ahrs)
+    {
+        AP_Param::setup_object_defaults(this, var_info);
+    }
 
     // Parameter definitions
     static const struct AP_Param::GroupInfo var_info[];
