@@ -1,7 +1,3 @@
-/// @file   AP_AltitudeController.h
-/// @brief  Altitude controller for AUVs using AC_PID for depth control
-/// @author ArduPilot Team
-
 #pragma once
 
 #include <AP_Common/AP_Common.h>
@@ -10,6 +6,11 @@
 #include <AP_Math/AP_Math.h>
 #include <AP_AHRS/AP_AHRS.h>
 
+/*
+    Altitude controller for torpedo-shaped AUVs.
+    Adjust pitch based on PI control of alt error, with FF term for buoyancy.
+    Speed scale adjusted (faster == less pitch).
+*/
 class AP_AltitudeController {
 public:
     // Constructor
