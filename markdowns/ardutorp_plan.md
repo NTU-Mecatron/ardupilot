@@ -22,11 +22,9 @@ Feel free to delete unnecessary code which is unique to plane (e.g., landing gea
 
 ### Replace TECS with a new AP_AltitudeControl class
 
-This class should utilize the [AC_PID](../libraries/AC_PID/AC_PID.h) class to compute desired vertical acceleration and pitch given altitude setpoint. To be located under [APM_Control](../libraries/APM_Control/) folder, it should take the style of [AP_TECS](../libraries/AP_TECS/AP_TECS.h) as an example. Minimum required functions:
+This class should utilize the [AC_PID](../libraries/AC_PID/AC_PID.h) class to compute desired pitch given altitude setpoint using a simple P controller. To be located under [APM_Control](../libraries/APM_Control/) folder. Minimum required functions:
 - get and set altitude setpoint
-- control update loop (to be called at 50hz)
-- get desired vertical acc (mainly for reporting)
-- get desired pitch (to be used by plane's pitch controller)
+- get target pitch (to be used by plane's pitch controller; no argument)
 
 I want one additional parameter for this class: `BUOYANCY_FF` which is a disturbance feedforward term to account for the vehicle's buoyancy. This will help the controller maintain depth.
 

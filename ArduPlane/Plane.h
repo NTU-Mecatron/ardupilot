@@ -62,7 +62,7 @@
 #include <AP_RCMapper/AP_RCMapper.h>        // RC input mapping library
 
 #include <AP_Vehicle/AP_Vehicle.h>
-#include <AP_TECS/AP_TECS.h>
+#include <APM_Control/AP_AltitudeController.h>
 #include <AP_NavEKF2/AP_NavEKF2.h>
 #include <AP_NavEKF3/AP_NavEKF3.h>
 #include <AP_Mission/AP_Mission.h>     // Mission command library
@@ -216,8 +216,8 @@ private:
     AP_RPM rpm_sensor;
 #endif
 
-    AP_TECS TECS_controller{ahrs, aparm, landing, MASK_LOG_TECS};
-    AP_L1_Control L1_controller{ahrs, &TECS_controller};
+    AP_AltitudeController alt_pitch_controller{ahrs};
+    AP_L1_Control L1_controller{ahrs, nullptr};
 
     // Attitude to servo controllers
     AP_RollController rollController{aparm};
@@ -653,13 +653,14 @@ private:
     AP_Terrain terrain;
 #endif
 
-    AP_Landing landing{mission,ahrs,&TECS_controller,nav_controller,aparm,
+    AP_Landing landing{mission,ahrs,nullptr,nav_controller,aparm,
             FUNCTOR_BIND_MEMBER(&Plane::set_target_altitude_proportion, void, const Location&, float),
             FUNCTOR_BIND_MEMBER(&Plane::constrain_target_altitude_location, void, const Location&, const Location&),
             FUNCTOR_BIND_MEMBER(&Plane::adjusted_altitude_cm, int32_t),
             FUNCTOR_BIND_MEMBER(&Plane::adjusted_relative_altitude_cm, int32_t),
             FUNCTOR_BIND_MEMBER(&Plane::disarm_if_autoland_complete, void),
             FUNCTOR_BIND_MEMBER(&Plane::update_flight_stage, void)};
+
 #if HAL_ADSB_ENABLED
     AP_ADSB adsb;
 
@@ -1019,13 +1020,12 @@ private:
     void disarm_if_autoland_complete();
     bool trigger_land_abort(const float climb_to_alt_m);
     void get_osd_roll_pitch_rad(float &roll, float &pitch) const override;
-    float tecs_hgt_afe(void);
     void efi_update(void);
     void get_scheduler_tasks(const AP_Scheduler::Task *&tasks,
                              uint8_t &task_count,
                              uint32_t &log_bit) override;
     void ahrs_update();
-    void update_speed_height(void);
+    void update_alt_pitch_controller(void);
     void update_GPS_50Hz(void);
     void update_GPS_10Hz(void);
     void update_compass(void);
@@ -1249,8 +1249,8 @@ private:
     // mode reason for entering previous mode
     ModeReason previous_mode_reason = ModeReason::UNKNOWN;
 
-    // last target alt we passed to tecs
-    int32_t tecs_target_alt_cm;
+    // last target alt
+    int32_t target_alt_cm;
 
 public:
     void failsafe_check(void);

@@ -61,7 +61,7 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     FAST_TASK(set_servos),
     SCHED_TASK(read_radio,             50,    100,   6),
     SCHED_TASK(check_short_failsafe,   50,    100,   9),
-    SCHED_TASK(update_speed_height,    50,    200,  12),
+    SCHED_TASK(update_alt_pitch_controller,    50,    200,  12),
     SCHED_TASK(update_throttle_hover, 100,     90,  24),
     SCHED_TASK_CLASS(RC_Channels,     (RC_Channels*)&plane.g2.rc_channels, read_mode_switch,           7,    100, 27),
     SCHED_TASK(update_GPS_50Hz,        50,    300,  30),
@@ -213,19 +213,17 @@ void Plane::ahrs_update()
 /*
   update 50Hz speed/height controller
  */
-void Plane::update_speed_height(void)
+void Plane::update_alt_pitch_controller(void)
 {
-    bool should_run_tecs = control_mode->does_auto_throttle();
+    bool should_run_alt_pitch_controller = true;
 #if HAL_QUADPLANE_ENABLED
-    if (quadplane.should_disable_TECS()) {
-        should_run_tecs = false;
-    }
+    if (quadplane.should_disable_alt_pitch_controller())    // TODO: change this to should disable alt_pitch controller
+        should_run_alt_pitch_controller = false;
 #endif
-    if (should_run_tecs) {
-	    // Call TECS 50Hz update. Note that we call this regardless of
-	    // throttle suppressed, as this needs to be running for
-	    // takeoff detection
-        TECS_controller.update_50hz();
+
+    if (should_run_alt_pitch_controller) {
+        const float speed_scaler = get_speed_scaler();
+        alt_pitch_controller.update(speed_scaler);
     }
 
 #if HAL_QUADPLANE_ENABLED
@@ -549,65 +547,38 @@ void Plane::update_alt()
 {
     barometer.update();
 
-    // calculate the sink rate.
-    float sink_rate;
-    Vector3f vel;
-    if (ahrs.get_velocity_NED(vel)) {
-        sink_rate = vel.z;
-    } else if (gps.status() >= AP_GPS::GPS_OK_FIX_3D && gps.have_vertical_velocity()) {
-        sink_rate = gps.velocity().z;
-    } else {
-        sink_rate = -barometer.get_climb_rate();        
-    }
-
-    // low pass the sink rate to take some of the noise out
-    auto_state.sink_rate = 0.8f * auto_state.sink_rate + 0.2f*sink_rate;
-#if PARACHUTE == ENABLED
-    parachute.set_sink_rate(auto_state.sink_rate);
-#endif
-
     update_flight_stage();
 
 #if AP_SCRIPTING_ENABLED
     if (nav_scripting_active()) {
-        // don't call TECS while we are in a trick
+        // don't call alt-pitch while we are in a trick
         return;
     }
 #endif
 
-    bool should_run_tecs = control_mode->does_auto_throttle();
+    bool should_run_alt_pitch_controller = true;
 #if HAL_QUADPLANE_ENABLED
-    if (quadplane.should_disable_TECS()) {
-        should_run_tecs = false;
+    if (quadplane.should_disable_alt_pitch_controller()) {  // TODO: Change to pitch_alt syntax
+        should_run_alt_pitch_controller = false;
     }
 #endif
     
-    if (should_run_tecs && !throttle_suppressed) {
+    if (should_run_alt_pitch_controller) {
 
-        float distance_beyond_land_wp = 0;
-        if (flight_stage == AP_FixedWing::FlightStage::LAND &&
-            current_loc.past_interval_finish_line(prev_WP_loc, next_WP_loc)) {
-            distance_beyond_land_wp = current_loc.get_distance(next_WP_loc);
-        }
+        // float distance_beyond_land_wp = 0;
+        // if (flight_stage == AP_FixedWing::FlightStage::LAND &&
+        //     current_loc.past_interval_finish_line(prev_WP_loc, next_WP_loc)) {
+        //     distance_beyond_land_wp = current_loc.get_distance(next_WP_loc);
+        // }
 
-        tecs_target_alt_cm = relative_target_altitude_cm();
+        target_alt_cm = relative_target_altitude_cm();
 
         if (control_mode == &mode_rtl && !rtl.done_climb && (g2.rtl_climb_min > 0 || (plane.flight_option_enabled(FlightOptions::CLIMB_BEFORE_TURN)))) {
-            // ensure we do the initial climb in RTL. We add an extra
-            // 10m in the demanded height to push TECS to climb
-            // quickly
-            tecs_target_alt_cm = MAX(tecs_target_alt_cm, prev_WP_loc.alt - home.alt) + (g2.rtl_climb_min+10)*100;
+            // TODO: an equivalent for torp?
+            // target_alt_cm = MAX(target_alt_cm, prev_WP_loc.alt - home.alt) + (g2.rtl_climb_min+10)*100;
         }
 
-        TECS_controller.update_pitch_throttle(tecs_target_alt_cm,
-                                                 target_airspeed_cm,
-                                                 flight_stage,
-                                                 distance_beyond_land_wp,
-                                                 get_takeoff_pitch_min_cd(),
-                                                 throttle_nudge,
-                                                 tecs_hgt_afe(),
-                                                 aerodynamic_load_factor,
-                                                 g.pitch_trim.get());
+        alt_pitch_controller.set_target_altitude(target_alt_cm);
     }
 }
 
@@ -616,6 +587,7 @@ void Plane::update_alt()
  */
 void Plane::update_flight_stage(void)
 {
+    // TODO: review this flight stage logic for torp AUV
     // Update the speed & height controller states
     if (control_mode->does_auto_throttle() && !throttle_suppressed) {
         if (control_mode == &mode_auto) {
@@ -649,9 +621,6 @@ void Plane::update_flight_stage(void)
 #endif
             set_flight_stage(AP_FixedWing::FlightStage::NORMAL);
         } else if (control_mode != &mode_takeoff) {
-            // If not in AUTO then assume normal operation for normal TECS operation.
-            // This prevents TECS from being stuck in the wrong stage if you switch from
-            // AUTO to, say, FBWB during a landing, an aborted landing or takeoff.
             set_flight_stage(AP_FixedWing::FlightStage::NORMAL);
         }
         return;
@@ -738,30 +707,6 @@ bool Plane::trigger_land_abort(const float climb_to_alt_m)
         }
     }
     return false;
-}
-
-
-/*
-  the height above field elevation that we pass to TECS
- */
-float Plane::tecs_hgt_afe(void)
-{
-    /*
-      pass the height above field elevation as the height above
-      the ground when in landing, which means that TECS gets the
-      rangefinder information and thus can know when the flare is
-      coming.
-    */
-    float hgt_afe;
-    if (flight_stage == AP_FixedWing::FlightStage::LAND) {
-        hgt_afe = height_above_target();
-        hgt_afe -= rangefinder_correction();
-    } else {
-        // when in normal flight we pass the hgt_afe as relative
-        // altitude to home
-        hgt_afe = relative_altitude;
-    }
-    return hgt_afe;
 }
 
 // vehicle specific waypoint info helpers

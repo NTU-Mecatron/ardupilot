@@ -160,6 +160,7 @@ bool Mode::is_vtol_man_throttle() const
 
 void Mode::update_target_altitude()
 {
+    // Luc_TODO
     Location target_location;
 
     if (plane.landing.is_flaring()) {

@@ -7,7 +7,7 @@
  *   4) If the GPS speed is above the threshold and the attitude is within limits then return true and reset the timer
  *   5) If the GPS speed and attitude within limits has not been achieved after 2.5 seconds, return false and reset the timer
  *   6) If the time lapsed since the last timecheck is greater than 0.2 seconds, return false and reset the timer
- *   NOTE : This function relies on the TECS 50Hz processing for its acceleration measure.
+ *   Luc_TODO
  */
 bool Plane::auto_takeoff_check(void)
 {
@@ -62,7 +62,7 @@ bool Plane::auto_takeoff_check(void)
 
     if (!takeoff_state.launchTimerStarted && !is_zero(g.takeoff_throttle_min_accel)) {
         // we are requiring an X acceleration event to launch
-        float xaccel = TECS_controller.get_VXdot();
+        float xaccel = ahrs.get_accel().x;
         if (g2.takeoff_throttle_accel_count <= 1) {
             if (xaccel < g.takeoff_throttle_min_accel) {
                 goto no_launch;
@@ -90,7 +90,7 @@ bool Plane::auto_takeoff_check(void)
         takeoff_state.last_tkoff_arm_time = now;
         if (now - takeoff_state.last_report_ms > 2000) {
             gcs().send_text(MAV_SEVERITY_INFO, "Armed AUTO, xaccel = %.1f m/s/s, waiting %.1f sec",
-                              (double)TECS_controller.get_VXdot(), (double)(wait_time_ms*0.001f));
+                              (double)ahrs.get_accel().x, (double)(wait_time_ms*0.001f));
             takeoff_state.last_report_ms = now;
         }
     }

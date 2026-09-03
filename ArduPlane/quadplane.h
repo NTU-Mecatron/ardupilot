@@ -184,10 +184,10 @@ public:
     bool allow_stick_mixing() const;
 
     /*
-      should we disable the TECS controller?
+      should we disable the alt-pitch controller
       only called when in an auto-throttle mode
      */
-    bool should_disable_TECS() const;
+    bool should_disable_alt_pitch_controller() const;
 
     // Get pilot throttle input with deadzone, this will return 50% throttle in failsafe!
     float get_throttle_input() const;
