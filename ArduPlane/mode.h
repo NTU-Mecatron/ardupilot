@@ -783,11 +783,13 @@ public:
 
 protected:
     AP_Float target_alt;
-    AP_Float min_takeoff_speed;
+    AP_Float takeoff_speed;
     AP_Int8 surface_pitch;
     AP_Int8 takeoff_in_circle;
 
     int32_t initial_heading_cd = -1;
+
+    bool takeoff_started;
 
     Location start_loc;
 
