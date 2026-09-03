@@ -33,18 +33,6 @@ AP_AltitudeController::AP_AltitudeController(AP_AHRS &ahrs) :
     _pid_info = _pid_alt.get_pid_info();
 }
 
-/// Set target altitude
-void AP_AltitudeController::set_target_altitude(int32_t target_alt_cm)
-{
-    _target_alt_cm = target_alt_cm;
-}
-
-/// Reset the integral gain of the controller
-void AP_AltitudeController::reset_I()
-{
-    _pid_alt.reset_I();
-}
-
 /// Update altitude controller
 void AP_AltitudeController::update(float speed_scaler)
 {

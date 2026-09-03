@@ -20,7 +20,7 @@ public:
     static const struct AP_Param::GroupInfo var_info[];
 
     /// Target altitude in centimeters (positive = up)
-    void set_target_altitude(int32_t target_alt_cm);
+    void set_target_altitude(int32_t target_alt_cm) {_target_alt_cm = target_alt_cm; }
 
     /// Get latest target altitude in centimeters (positive = up)
     int32_t get_target_altitude() const { return _target_alt_cm; }
@@ -35,7 +35,7 @@ public:
     int32_t get_pitch_demand() const { return _desired_pitch_cd; }
 
     /// Reset integral gain
-    void reset_I();
+    void reset_I() {_pid_alt.reset_I(); }
 
     /// Get pid info
     const AP_PIDInfo& get_pid_info(void) const { return _pid_info; }
