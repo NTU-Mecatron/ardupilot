@@ -24,14 +24,17 @@ public:
     /// Get latest target speed in m/s
     float get_target_speed() const { return _target_speed_ms; }
 
+    // Get speed along body forward axis
+    bool get_forward_speed(float &speed) const;
+
     /// Update speed controller
     /// Must be called at minimum 50Hz
     /// Internally retrieves current speed from AHRS and computes desired throttle
     void update();
 
-    /// Get desired throttle, to be used by the motor controller
-    /// @return  Desired throttle (-100 to 100)
-    float get_throttle_demand() const { return _desired_throttle * 100; }
+    /// Get desired throttle pct, to be used by the motor controller
+    /// @return  Desired throttle pct (-100 to 100)
+    float get_throttle_demand() const { return _desired_throttle * 100.0f; }
 
     /// Reset integral gain
     void reset_I() { _pid_speed.reset_I(); }
@@ -40,9 +43,6 @@ public:
     const AP_PIDInfo& get_pid_info(void) const { return _pid_info; }
 
 private:
-    // Get speed along body forward axis
-    bool get_forward_speed(float &speed) const;
-
     // AHRS reference for getting speed
     AP_AHRS &_ahrs;
 
