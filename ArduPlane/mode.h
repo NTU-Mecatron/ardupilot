@@ -787,10 +787,18 @@ protected:
     AP_Int8 surface_pitch;
     AP_Int8 takeoff_in_circle;
 
-    bool takeoff_started;
+    int32_t initial_heading_cd = -1;
+
     Location start_loc;
 
     bool _enter() override;
+
+    enum TakeoffState {
+        ACCELERATING = 0,
+        TAKING_OFF = 1,
+        REACHED_TARGET_ALT = 2
+    };
+    TakeoffState current_takeoff_state;
 };
 
 #if HAL_SOARING_ENABLED
