@@ -10,6 +10,7 @@ extern const AP_HAL::HAL& hal;
 // Parameter information
 const AP_Param::GroupInfo AP_AltitudeController::var_info[] = {
     // PID Params: altitude error -> pitch angle
+    // Luc_TODO: change this to only PI parameters, limit the number of possible params
     AP_SUBGROUPINFO(_pid_alt, "_ALT_", 0, AP_AltitudeController, AC_PID),
 
     // @Param: BUOY_FF
