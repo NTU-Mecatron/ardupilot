@@ -565,11 +565,11 @@ void Plane::update_alt()
     
     if (should_run_alt_pitch_controller) {
 
-        float distance_beyond_land_wp = 0;
-        if (flight_stage == AP_FixedWing::FlightStage::LAND &&
-            current_loc.past_interval_finish_line(prev_WP_loc, next_WP_loc)) {
-            distance_beyond_land_wp = current_loc.get_distance(next_WP_loc);
-        }
+        // float distance_beyond_land_wp = 0;
+        // if (flight_stage == AP_FixedWing::FlightStage::LAND &&
+        //     current_loc.past_interval_finish_line(prev_WP_loc, next_WP_loc)) {
+        //     distance_beyond_land_wp = current_loc.get_distance(next_WP_loc);
+        // }
 
         target_alt_cm = relative_target_altitude_cm();
 

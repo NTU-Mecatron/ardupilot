@@ -1267,6 +1267,9 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
 
 ParametersG2::ParametersG2(void) :
     unused_integer{1}
+#if HAL_SOARING_ENABLED
+    ,soaring_controller(plane.TECS_controller, plane.aparm)
+#endif
 #if HAL_BUTTON_ENABLED
     ,button_ptr(&plane.button)
 #endif
