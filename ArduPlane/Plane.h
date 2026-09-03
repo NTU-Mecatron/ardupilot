@@ -224,6 +224,7 @@ private:
     AP_PitchController pitchController{aparm};
     AP_YawController yawController{aparm};
     AP_SteerController steerController{};
+    AP_SpeedController speedController{ahrs};
 
     // Training mode
     bool training_manual_roll;  // user has manual roll control

@@ -450,7 +450,8 @@ void Plane::stabilize()
 
 void Plane::calc_throttle()
 {
-    // Luc_TODO: Replace with speed controller
+    float commanded_throttle = speedController.get_throttle_demand();
+    SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, commanded_throttle);
 }
 
 /*****************************************

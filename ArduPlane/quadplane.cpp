@@ -2467,7 +2467,7 @@ void QuadPlane::vtol_position_controller(void)
         plane.nav_controller->update_waypoint(plane.auto_state.crosstrack ? plane.prev_WP_loc : plane.current_loc, loc);
 
         // use TECS for throttle
-        // SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, plane.TECS_controller.get_throttle_demand());
+        SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, plane.speedController.get_throttle_demand());
 
         // get pitch
         int32_t commanded_pitch = plane.alt_pitch_controller.get_pitch_demand();
