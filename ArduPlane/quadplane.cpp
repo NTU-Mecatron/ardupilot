@@ -1616,7 +1616,7 @@ void SLT_Transition::update()
         // during transition we ask TECS to use a synthetic
         // airspeed. Otherwise the pitch limits will throw off the
         // throttle calculation which is driven by pitch
-        plane.TECS_controller.use_synthetic_airspeed();
+        // plane.TECS_controller.use_synthetic_airspeed();
     }
     
     switch (transition_state) {
@@ -1693,7 +1693,7 @@ void SLT_Transition::update()
         if (quadplane.tiltrotor.enabled() && !quadplane.tiltrotor.has_fw_motor()) {
             // tilt rotors without decidated fw motors do not have forward throttle output in this stage
             // prevent throttle I wind up
-            plane.TECS_controller.reset_throttle_I();
+            // plane.TECS_controller.reset_throttle_I();
         }
 
         last_throttle = motors->get_throttle();
@@ -2467,10 +2467,10 @@ void QuadPlane::vtol_position_controller(void)
         plane.nav_controller->update_waypoint(plane.auto_state.crosstrack ? plane.prev_WP_loc : plane.current_loc, loc);
 
         // use TECS for throttle
-        SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, plane.TECS_controller.get_throttle_demand());
+        // SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, plane.TECS_controller.get_throttle_demand());
 
-        // use TECS for pitch
-        int32_t commanded_pitch = plane.TECS_controller.get_pitch_demand();
+        // get pitch
+        int32_t commanded_pitch = plane.alt_pitch_controller.get_pitch_demand();
         plane.nav_pitch_cd = constrain_int32(commanded_pitch, plane.pitch_limit_min*100, plane.aparm.pitch_limit_max.get()*100);
         if (poscontrol.get_state() == QPOS_AIRBRAKE) {
             // don't allow down pitch in airbrake
@@ -3464,6 +3464,7 @@ bool QuadPlane::do_vtol_land(const AP_Mission::Mission_Command& cmd)
  */
 bool QuadPlane::verify_vtol_takeoff(const AP_Mission::Mission_Command &cmd)
 {
+    // Luc_TODO
     if (!available()) {
         return true;
     }
@@ -3500,7 +3501,7 @@ bool QuadPlane::verify_vtol_takeoff(const AP_Mission::Mission_Command &cmd)
         return false;
     }
     transition->restart();
-    plane.TECS_controller.set_pitch_max_limit(transition_pitch_max);
+    // plane.TECS_controller.set_pitch_max_limit(transition_pitch_max);
 
     // todo: why are you doing this, I want to delete it.
     set_alt_target_current();
@@ -3513,7 +3514,7 @@ bool QuadPlane::verify_vtol_takeoff(const AP_Mission::Mission_Command &cmd)
         // we reset TECS so that the target height filter is not
         // constrained by the climb and sink rates from the initial
         // takeoff height.
-        plane.TECS_controller.reset();
+        // plane.TECS_controller.reset();
     }
 
     // don't crosstrack on next WP
@@ -4324,9 +4325,9 @@ Vector2f QuadPlane::landing_desired_closing_velocity()
     // don't let the target speed go above landing approach speed
     const float eas2tas = plane.ahrs.get_EAS2TAS();
     float land_speed = plane.aparm.airspeed_cruise;
-    float tecs_land_airspeed = plane.TECS_controller.get_land_airspeed();
-    if (is_positive(tecs_land_airspeed)) {
-        land_speed = tecs_land_airspeed;
+    float land_groundspeed = plane.ahrs.groundspeed();
+    if (is_positive(land_groundspeed)) {
+        land_speed = land_groundspeed;
     } else {
         // use half way between min airspeed and cruise if
         // TECS_LAND_AIRSPEED not set
@@ -4349,9 +4350,9 @@ float QuadPlane::get_land_airspeed(void)
         plane.control_mode == &plane.mode_rtl) {
         const float cruise_speed = plane.aparm.airspeed_cruise;
         float approach_speed = cruise_speed;
-        float tecs_land_airspeed = plane.TECS_controller.get_land_airspeed();
-        if (is_positive(tecs_land_airspeed)) {
-            approach_speed = tecs_land_airspeed;
+        float land_groundspeed = plane.ahrs.groundspeed();
+        if (is_positive(land_groundspeed)) {
+            approach_speed = land_groundspeed;
         } else {
             if (qstate == QPOS_APPROACH) {
                 // default to half way between min airspeed and cruise
@@ -4617,7 +4618,7 @@ void SLT_Transition::set_FW_roll_pitch(int32_t& nav_pitch_cd, int32_t& nav_roll_
     }
 
     // set a single loop pitch limit in TECS
-    plane.TECS_controller.set_pitch_max_limit(max_pitch);
+    // plane.TECS_controller.set_pitch_max_limit(max_pitch);
 
     // ensure pitch is constrained to limit
     nav_pitch_cd = constrain_int32(nav_pitch_cd, -max_pitch*100.0, max_pitch*100.0);
@@ -4781,10 +4782,10 @@ bool QuadPlane::allow_stick_mixing() const
 }
 
 /*
-  return true if we should disable TECS in the current flight state
-  this ensures that TECS resets when we change height in a VTOL mode
+  return true if we should disable alt-pitch in the current flight state
+  this ensures that alt-pitch resets when we change height in a VTOL mode
  */
-bool QuadPlane::should_disable_TECS() const
+bool QuadPlane::should_disable_alt_pitch_controller() const
 {
     if (in_vtol_land_descent()) {
         return true;

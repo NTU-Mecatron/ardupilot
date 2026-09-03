@@ -109,7 +109,7 @@ void Plane::Log_Write_Control_Tuning()
         pitch           : (int16_t)ahrs.pitch_sensor,
         throttle_out    : SRV_Channels::get_output_scaled(SRV_Channel::k_throttle),
         rudder_out      : SRV_Channels::get_output_scaled(SRV_Channel::k_rudder),
-        throttle_dem    : TECS_controller.get_throttle_demand(),
+        throttle_dem    : 0.0, // Luc_TODO: Replace with actual speed control
         airspeed_estimate : est_airspeed,
         airspeed_estimate_status : (uint8_t)airspeed_estimate_type,
         synthetic_airspeed : synthetic_airspeed,
@@ -163,7 +163,7 @@ struct PACKED log_Nav_Tuning {
     int32_t target_lat;
     int32_t target_lng;
     int32_t target_alt_wp;
-    int32_t target_alt_tecs;
+    int32_t target_alt;
     int32_t target_airspeed;
 };
 
@@ -183,7 +183,7 @@ void Plane::Log_Write_Nav_Tuning()
         target_lat          : next_WP_loc.lat,
         target_lng          : next_WP_loc.lng,
         target_alt_wp       : next_WP_loc.alt,
-        target_alt_tecs     : tecs_target_alt_cm,
+        target_alt          : target_alt_cm,
         target_airspeed     : target_airspeed_cm,
     };
     logger.WriteBlock(&pkt, sizeof(pkt));
@@ -334,7 +334,7 @@ const struct LogStructure Plane::log_structure[] = {
 // @Field: TLat: target latitude
 // @Field: TLng: target longitude
 // @Field: TAW: target altitude WP
-// @Field: TAT: target altitude TECS
+// @Field: TAT: target altitude
 // @Field: TAsp: target airspeed
     { LOG_NTUN_MSG, sizeof(log_Nav_Tuning),         
       "NTUN", "QfcccfffLLeee",  "TimeUS,Dist,TBrg,NavBrg,AltE,XT,XTi,AsE,TLat,TLng,TAW,TAT,TAsp", "smddmmmnDUmmn", "F0BBB0B0GG000" , true },

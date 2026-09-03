@@ -290,7 +290,7 @@ const AP_Param::Info Plane::var_info[] = {
 
     // @Param: AIRSPEED_MAX
     // @DisplayName: Maximum Airspeed
-    // @Description: Maximum airspeed demanded in automatic throttle modes. Should be set slightly less than level flight speed at THR_MAX and also at least 50% above AIRSPEED_MIN to allow for accurate TECS altitude control.
+    // @Description: Maximum airspeed demanded in automatic throttle modes. Should be set slightly less than level flight speed at THR_MAX and also at least 50% above AIRSPEED_MIN to allow for accurate altitude control.
     // @Units: m/s
     // @Range: 5 100
     // @Increment: 1
@@ -898,10 +898,6 @@ const AP_Param::Info Plane::var_info[] = {
     // @Path: ../libraries/AP_L1_Control/AP_L1_Control.cpp
     GOBJECT(L1_controller,         "NAVL1_",   AP_L1_Control),
 
-    // @Group: TECS_
-    // @Path: ../libraries/AP_TECS/AP_TECS.cpp
-    GOBJECT(TECS_controller,         "TECS_",   AP_TECS),
-
 #if HAL_MOUNT_ENABLED
     // @Group: MNT
     // @Path: ../libraries/AP_Mount/AP_Mount.cpp
@@ -1271,9 +1267,6 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
 
 ParametersG2::ParametersG2(void) :
     unused_integer{1}
-#if HAL_SOARING_ENABLED
-    ,soaring_controller(plane.TECS_controller, plane.aparm)
-#endif
 #if HAL_BUTTON_ENABLED
     ,button_ptr(&plane.button)
 #endif

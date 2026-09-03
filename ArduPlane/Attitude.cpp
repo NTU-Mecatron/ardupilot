@@ -7,6 +7,7 @@
  */
 float Plane::calc_speed_scaler(void)
 {
+    // Luc_TODO: simplify to underwater logic
     float aspeed, speed_scaler;
     if (ahrs.airspeed_estimate(aspeed)) {
         if (aspeed > auto_state.highest_airspeed && arming.is_armed_and_safety_off()) {
@@ -449,16 +450,7 @@ void Plane::stabilize()
 
 void Plane::calc_throttle()
 {
-    if (aparm.throttle_cruise <= 1) {
-        // user has asked for zero throttle - this may be done by a
-        // mission which wants to turn off the engine for a parachute
-        // landing
-        SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, 0.0);
-        return;
-    }
-
-    float commanded_throttle = TECS_controller.get_throttle_demand();
-    SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, commanded_throttle);
+    // Luc_TODO: Replace with speed controller
 }
 
 /*****************************************
@@ -580,11 +572,11 @@ int16_t Plane::calc_nav_yaw_ground(void)
 
 
 /*
-  calculate a new nav_pitch_cd from the speed height controller
+  get a new nav_pitch_cd from the alt-pitch controller
  */
 void Plane::calc_nav_pitch()
 {
-    int32_t commanded_pitch = TECS_controller.get_pitch_demand();
+    int32_t commanded_pitch = alt_pitch_controller.get_pitch_demand();
     nav_pitch_cd = constrain_int32(commanded_pitch, pitch_limit_min*100, aparm.pitch_limit_max.get()*100);
 }
 

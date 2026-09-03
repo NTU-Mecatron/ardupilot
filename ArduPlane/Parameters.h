@@ -327,7 +327,7 @@ public:
         k_param_yawController,
         k_param_L1_controller,
         k_param_rcmap,
-        k_param_TECS_controller,
+        k_param_alt_pitch_controller,
         k_param_rally_total_old,  //unused
         k_param_steerController,
 

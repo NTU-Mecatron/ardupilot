@@ -14,20 +14,16 @@
 class AP_AltitudeController {
 public:
     // Constructor
-    AP_AltitudeController(AP_AHRS &ahrs)
-        : _ahrs(ahrs)
-    {
-        AP_Param::setup_object_defaults(this, var_info);
-    }
+    AP_AltitudeController(AP_AHRS &ahrs);
 
     // Parameter definitions
     static const struct AP_Param::GroupInfo var_info[];
 
     /// Target altitude in centimeters (positive = up)
-    void set_target_altitude(int32 target_alt_cm);
+    void set_target_altitude(int32_t target_alt_cm);
 
     /// Get latest target altitude in centimeters (positive = up)
-    int32 get_target_altitude() const { return _target_alt_cm; }
+    int32_t get_target_altitude() const { return _target_alt_cm; }
 
     /// Update altitude controller
     /// Must be called at minimum 50Hz
@@ -36,10 +32,13 @@ public:
 
     /// Get desired pitch angle, to be used by the pitch controller
     /// @return  Desired pitch in centidegrees (positive = nose up)
-    int32 get_pitch_demand() const { return _desired_pitch_cd; }
+    int32_t get_pitch_demand() const { return _desired_pitch_cd; }
 
     /// Reset integral gain
     void reset_I();
+
+    /// Get pid info
+    const AP_PIDInfo& get_pid_info(void) const { return _pid_info; }
 
 private:
     // AHRS reference for getting altitude and climb rate
@@ -53,7 +52,9 @@ private:
     AP_Float _pitch_max;               // Maximum pitch angle (degrees)
 
     // State variables
-    int32   _target_alt_cm;             // Target altitude in cm
-    int32   _desired_pitch_cd;          // Desired pitch angle in centidegrees
+    int32_t _target_alt_cm;             // Target altitude in cm
+    int32_t _desired_pitch_cd;          // Desired pitch angle in centidegrees
     uint64_t _update_last_usec;         // Time of last update in microseconds
+
+    AP_PIDInfo _pid_info;                  // PID info for external access
 };
