@@ -22,7 +22,7 @@ const AP_Param::GroupInfo ModeTakeoff::var_info[] = {
     // @Increment: 0.1
     // @Units: m
     // @User: Standard
-    AP_GROUPINFO("MIN_SPEED", 2, ModeTakeoff, min_takeoff_speed, 1.5),
+    AP_GROUPINFO("MIN_SPEED", 2, ModeTakeoff, takeoff_speed, 1.5),
 
     // @Param: SURFACE_PITCH
     // @DisplayName: Desired surface pitch
@@ -61,20 +61,20 @@ void ModeTakeoff::update()
 {
     // don't setup waypoints if we dont have a valid position and home!
     if (!(plane.current_loc.initialised() && AP::ahrs().home_is_set())) {
-        plane.calc_nav_roll();
-        plane.calc_nav_pitch();
+        plane.nav_roll_cd = 0;
+        plane.nav_pitch_cd = 0;
         SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, 0.0);
         return;
     }
 
-    const float alt = target_alt;
-    const float dist = target_dist;
     if (!takeoff_started) {
         const uint16_t altitude = plane.relative_ground_altitude(false,true);
         const float direction = degrees(ahrs.get_yaw());
         // see if we will skip takeoff as already flying
-        if (plane.is_flying() && (millis() - plane.started_flying_ms > 10000U) && ahrs.groundspeed() > 3) {
-            if (altitude >= alt) {
+        float current_speed;
+        plane.speedController.get_forward_speed(current_speed);
+        if (altitude < target_alt && (millis() - plane.started_flying_ms > 10000U) && current_speed > takeoff_speed) {
+            if (altitude >= target_alt) {
                 gcs().send_text(MAV_SEVERITY_INFO, "Above TKOFF alt - loitering");
                 plane.next_WP_loc = plane.current_loc;
                 takeoff_started = true;
@@ -153,24 +153,24 @@ void ModeTakeoff::navigate()
 {
     if (current_takeoff_state == TakeoffState::ACCELERATING) 
     {
-        plane.speedController.set_target_speed(min_takeoff_speed);
+        plane.speedController.set_target_speed(takeoff_speed);
         plane.nav_pitch_cd = surface_pitch * 100;
-        plane.nav_controller.update_heading_hold(initial_heading_cd);
+        plane.nav_controller->update_heading_hold(initial_heading_cd);
     } 
     else if (current_takeoff_state == TakeoffState::TAKING_OFF) 
     {
-        plane.speedController.set_target_speed(min_takeoff_speed);
+        plane.speedController.set_target_speed(takeoff_speed);
         plane.alt_pitch_controller.set_target_altitude(target_alt * 100);
 
         if (takeoff_in_circle) {
             // Luc_TODO: update loiter with changing depth, or separate the axes
         } else {    // Maintain heading when dive
-            plane.nav_controller.update_heading_hold(initial_heading_cd);
+            plane.nav_controller->update_heading_hold(initial_heading_cd);
         }
     } 
     else if (current_takeoff_state == TakeoffState::REACHED_TARGET_ALT) 
     {
-        plane.speedController.set_target_speed(min_takeoff_speed);
+        plane.speedController.set_target_speed(takeoff_speed);
         plane.alt_pitch_controller.set_target_altitude(target_alt * 100);
         plane.update_loiter(0); // Zero indicates to use WP_LOITER_RAD
     }
