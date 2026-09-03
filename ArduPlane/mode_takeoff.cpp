@@ -8,48 +8,38 @@
 const AP_Param::GroupInfo ModeTakeoff::var_info[] = {
     // @Param: ALT
     // @DisplayName: Takeoff mode altitude
-    // @Description: This is the target altitude for TAKEOFF mode
-    // @Range: 0 200
-    // @Increment: 1
-    // @Units: m
-    // @User: Standard
-    AP_GROUPINFO("ALT", 1, ModeTakeoff, target_alt, 50),
-
-    // @Param: LVL_ALT
-    // @DisplayName: Takeoff mode altitude level altitude
-    // @Description: This is the altitude below which the wings are held level for TAKEOFF and AUTO modes. Below this altitude, roll demand is restricted to LEVEL_ROLL_LIMIT. Normal-flight roll restriction resumes above TKOFF_LVL_ALT*3 or TKOFF_ALT, whichever is lower. Roll limits are scaled while between TKOFF_LVL_ALT and those altitudes for a smooth transition.
-    // @Range: 0 50
-    // @Increment: 1
-    // @Units: m
-    // @User: Standard
-    AP_GROUPINFO("LVL_ALT", 2, ModeTakeoff, level_alt, 5),
-
-    // @Param: LVL_PITCH
-    // @DisplayName: Takeoff mode altitude initial pitch
-    // @Description: This is the target pitch for the initial climb to TKOFF_LVL_ALT
-    // @Range: 0 30
-    // @Increment: 1
-    // @Units: deg
-    // @User: Standard
-    AP_GROUPINFO("LVL_PITCH", 3, ModeTakeoff, level_pitch, 15),
-
-    // @Param: DIST
-    // @DisplayName: Takeoff mode distance
-    // @Description: This is the distance from the takeoff location where the plane will loiter. The loiter point will be in the direction of takeoff (the direction the plane is facing when the plane begins takeoff)
-    // @Range: 0 500
-    // @Increment: 1
-    // @Units: m
-    // @User: Standard
-    AP_GROUPINFO("DIST", 4, ModeTakeoff, target_dist, 200),
-
-    // @Param: GND_PITCH
-    // @DisplayName: Takeoff run pitch demand
-    // @Description: Degrees of pitch angle demanded during the takeoff run before speed reaches TKOFF_ROTATE_SPD. For taildraggers set to 3-point ground pitch angle and use TKOFF_TDRAG_ELEV to prevent nose tipover. For nose-wheel steer aircraft set to the ground pitch angle and if a reduction in nose-wheel load is required as speed rises, use a positive offset in TKOFF_GND_PITCH of up to 5 degrees above the angle on ground, starting at the mesured pitch angle and incrementing in 1 degree steps whilst checking for premature rotation and takeoff with each increment. To increase nose-wheel load, use a negative TKOFF_TDRAG_ELEV and refer to notes on TKOFF_TDRAG_ELEV before making adjustments.
-    // @Units: deg
-    // @Range: -5.0 10.0
+    // @Description: This is the target altitude for TAKEOFF mode. Positive is up, so for AUV should be set to negative number.
+    // @Range: -100 -0.1
     // @Increment: 0.1
+    // @Units: m
     // @User: Standard
-    AP_GROUPINFO("GND_PITCH", 5, ModeTakeoff, ground_pitch, 5),
+    AP_GROUPINFO("ALT", 1, ModeTakeoff, target_alt, -3.0),
+
+    // @Param: MIN_SPEED
+    // @DisplayName: Minimum takeoff speed
+    // @Description: AUV need to reach this speed before pitching down to dive.
+    // @Range: 0 10.0
+    // @Increment: 0.1
+    // @Units: m
+    // @User: Standard
+    AP_GROUPINFO("MIN_SPEED", 2, ModeTakeoff, min_takeoff_speed, 1.5),
+
+    // @Param: SURFACE_PITCH
+    // @DisplayName: Desired surface pitch
+    // @Description: Target pitch for AUV to maintain when accelerating on the surface.
+    // @Range: 0 15
+    // @Increment: 1
+    // @Units: deg
+    // @User: Standard
+    AP_GROUPINFO("SURFACE_PITCH", 3, ModeTakeoff, surface_pitch, 5),
+
+    // @Param: IN_CIRCLE
+    // @DisplayName: Takeoff in circle
+    // @Description: Enable this to takeoff in circle if the altitude change is large.
+    // @Range: 0 1
+    // @Increment: 1
+    // @User: Standard
+    AP_GROUPINFO("IN_CIRCLE", 4, ModeTakeoff, takeoff_in_circle, 0),
 
     AP_GROUPEND
 };
