@@ -52,8 +52,8 @@ ModeTakeoff::ModeTakeoff() :
 
 bool ModeTakeoff::_enter()
 {
-    takeoff_started = false;
-
+    current_takeoff_state = TakeoffState::ACCELERATING;
+    initial_heading_cd = wrap_360_cd(ahrs.yaw_sensor);
     return true;
 }
 
@@ -151,7 +151,28 @@ void ModeTakeoff::update()
 
 void ModeTakeoff::navigate()
 {
-    // Zero indicates to use WP_LOITER_RAD
-    plane.update_loiter(0);
+    if (current_takeoff_state == TakeoffState::ACCELERATING) 
+    {
+        plane.speedController.set_target_speed(min_takeoff_speed);
+        plane.nav_pitch_cd = surface_pitch * 100;
+        plane.nav_controller.update_heading_hold(initial_heading_cd);
+    } 
+    else if (current_takeoff_state == TakeoffState::TAKING_OFF) 
+    {
+        plane.speedController.set_target_speed(min_takeoff_speed);
+        plane.alt_pitch_controller.set_target_altitude(target_alt * 100);
+
+        if (takeoff_in_circle) {
+            // Luc_TODO: update loiter with changing depth, or separate the axes
+        } else {    // Maintain heading when dive
+            plane.nav_controller.update_heading_hold(initial_heading_cd);
+        }
+    } 
+    else if (current_takeoff_state == TakeoffState::REACHED_TARGET_ALT) 
+    {
+        plane.speedController.set_target_speed(min_takeoff_speed);
+        plane.alt_pitch_controller.set_target_altitude(target_alt * 100);
+        plane.update_loiter(0); // Zero indicates to use WP_LOITER_RAD
+    }
 }
 
