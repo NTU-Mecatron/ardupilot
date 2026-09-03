@@ -8,6 +8,7 @@ extern const AP_HAL::HAL& hal;
 const AP_Param::GroupInfo AP_SpeedController::var_info[] = {
     // PID Params: speed error -> throttle
     // Output is throttle, -1 to 1
+    // Luc_TODO: Simplify the number of params available
     AP_SUBGROUPINFO(_pid_speed, "_SPD_", 0, AP_SpeedController, AC_PID),
 
     AP_GROUPEND

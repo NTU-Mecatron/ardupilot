@@ -8,7 +8,7 @@
 
 /*
     Speed controller for torpedo-shaped AUVs.
-    Adjust throttle based on PID control of speed error.
+    Adjust throttle based on PI (w FF) control of speed error.
 */
 class AP_SpeedController {
 public:
@@ -46,8 +46,8 @@ private:
     // AHRS reference for getting speed
     AP_AHRS &_ahrs;
 
-    // PID controller: speed error -> throttle
-    AC_PID _pid_speed{0.2f, 0.02f, 0.0f, 0.5f, 0.2f, 0.0f, 0.0f, 0.0f};
+    // PI controller (w FF): speed error -> throttle
+    AC_PID _pid_speed{0.2f, 0.02f, 0.0f, 0.2f, 0.2f, 0.0f, 0.0f, 0.0f};
 
     // State variables
     float   _target_speed_ms;           // Target speed in m/s
