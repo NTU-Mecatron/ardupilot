@@ -31,7 +31,7 @@ public:
 
     /// Get desired throttle, to be used by the motor controller
     /// @return  Desired throttle (-100 to 100)
-    float get_throttle_demand() const { return _desired_throttle * 100f; }
+    float get_throttle_demand() const { return _desired_throttle * 100; }
 
     /// Reset integral gain
     void reset_I() { _pid_speed.reset_I(); }
