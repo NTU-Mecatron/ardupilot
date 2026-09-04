@@ -52,6 +52,12 @@ ModeTakeoff::ModeTakeoff() :
 
 bool ModeTakeoff::_enter()
 {
+    // Do not enter takeoff if we are already running
+    const uint16_t altitude = plane.relative_ground_altitude(false,true);
+    if (altitude < -1.0 && (millis() - plane.started_flying_ms > 5000U)) {
+        return false;   // Luc_TODO: check what happen if return false
+    }
+
     current_takeoff_state = TakeoffState::ACCELERATING;
     initial_heading_cd = wrap_360_cd(ahrs.yaw_sensor);
     return true;
@@ -106,7 +112,7 @@ void ModeTakeoff::update()
             if (!plane.throttle_suppressed) {
                 gcs().send_text(MAV_SEVERITY_INFO, "Takeoff to %.0fm for %.1fm heading %.1f deg",
                                 alt, dist, direction);
-                takeoff_started = true;
+                takeoff_started = true;  
             }
         }
     }
@@ -151,6 +157,26 @@ void ModeTakeoff::update()
 
 void ModeTakeoff::navigate()
 {
+    float current_speed = 0.0;
+    plane.speedController.get_forward_speed(current_speed);
+
+    const uint16_t altitude = plane.relative_ground_altitude(false,true);
+
+    // Check current takeoff state
+    if (current_speed < takeoff_speed * 0.8f) {
+        current_takeoff_state = TakeoffState::ACCELERATING;
+        plane.set_flight_stage(AP_FixedWing::FlightStage::TAKEOFF);
+    }
+    else if (altitude > target_alt) {
+        current_takeoff_state = TakeoffState::TAKING_OFF;
+        plane.set_flight_stage(AP_FixedWing::FlightStage::TAKEOFF);
+    }
+    else {
+        current_takeoff_state = TakeoffState::REACHED_TARGET_ALT;
+        plane.set_flight_stage(AP_FixedWing::FlightStage::NORMAL);
+    }
+
+    // Assign what to do in different takeoff states
     if (current_takeoff_state == TakeoffState::ACCELERATING) 
     {
         plane.speedController.set_target_speed(takeoff_speed);
