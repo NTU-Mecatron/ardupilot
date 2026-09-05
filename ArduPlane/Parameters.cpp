@@ -898,6 +898,14 @@ const AP_Param::Info Plane::var_info[] = {
     // @Path: ../libraries/AP_L1_Control/AP_L1_Control.cpp
     GOBJECT(L1_controller,         "NAVL1_",   AP_L1_Control),
 
+    // @Group: ALT_
+    // @Path: ../libraries/APM_Control/AP_AltitudeController.cpp
+    GOBJECT(alt_pitch_controller,  "ALT_",   AP_AltitudeController),
+
+    // @Group: SPD_
+    // @Path: ../libraries/APM_Control/AP_SpeedController.cpp
+    GOBJECT(speedController,  "SPD_",   AP_SpeedController),
+
 #if HAL_MOUNT_ENABLED
     // @Group: MNT
     // @Path: ../libraries/AP_Mount/AP_Mount.cpp
