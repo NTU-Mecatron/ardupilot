@@ -6,10 +6,30 @@ extern const AP_HAL::HAL& hal;
 
 // Parameter information
 const AP_Param::GroupInfo AP_SpeedController::var_info[] = {
-    // PID Params: speed error -> throttle
-    // Output is throttle, -1 to 1
-    // Luc_TODO: Simplify the number of params available
-    AP_SUBGROUPINFO(_pid_speed, "_SPD_", 0, AP_SpeedController, AC_PID),
+    // @Param: CTRL_P
+    // @DisplayName: Speed controller P gain
+    // @Description: Speed controller P gain. Converts the speed error (m/s) into a desired throttle (-1 to 1)
+    // @Range: 0.1 0.5
+    // @User: Standard
+
+    // @Param: CTRL_I
+    // @DisplayName: Speed controller I gain
+    // @Description: Speed controller I gain. Integrates the speed error (m/s) over time to correct steady-state errors
+    // @Range: 0.001 0.1
+    // @User: Standard
+
+    // @Param: CTRL_IMAX
+    // @DisplayName: Speed controller I maximum
+    // @Description: Maximum value for the integral term to prevent windup
+    // @Range: 0.1 0.4
+    // @User: Standard
+
+    // @Param: CTRL_FF
+    // @DisplayName: Speed controller feedforward
+    // @Description: Feedforward term based on speed setpoint
+    // @Range: 0.1 0.5
+    // @User: Standard
+    AP_SUBGROUPINFO(_pid_speed, "CTRL_", 0, AP_SpeedController, AC_PID),
 
     AP_GROUPEND
 };
