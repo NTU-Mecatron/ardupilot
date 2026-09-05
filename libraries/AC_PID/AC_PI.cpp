@@ -42,5 +42,11 @@ float AC_PI::update(float measurement, float target, float dt)
     integrator = constrain_float(integrator, 0, imax);
     output_P = kP * err;
 
+    _pid_info.target = target;
+    _pid_info.actual = measurement;
+    _pid_info.error = err;
+    _pid_info.P = output_P;
+    _pid_info.I = integrator;
+
     return output_P + integrator;
 }

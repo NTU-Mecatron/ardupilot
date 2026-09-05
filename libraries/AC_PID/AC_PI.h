@@ -6,6 +6,7 @@
 
 #include <AP_Common/AP_Common.h>
 #include <AP_Param/AP_Param.h>
+#include "AP_PIDInfo.h"
 
 class AC_PI {
 public:
@@ -27,12 +28,17 @@ public:
         return integrator;
     }
 
+    void reset_I() { integrator = 0.0f; }
+
+    const AP_PIDInfo& get_pid_info(void) const { return _pid_info; }
+
 protected:
     AP_Float        kP;
     AP_Float        kI;
     AP_Float        imax;
     float           integrator;
     float           output_P;
+    AP_PIDInfo      _pid_info;
 
 private:
     const float default_kp;
