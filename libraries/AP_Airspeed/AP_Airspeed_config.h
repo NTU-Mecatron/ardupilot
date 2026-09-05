@@ -6,7 +6,7 @@
 #include <AP_ExternalAHRS/AP_ExternalAHRS_config.h>
 
 #ifndef AP_AIRSPEED_ENABLED
-#define AP_AIRSPEED_ENABLED 1
+#define AP_AIRSPEED_ENABLED 0
 #endif
 
 #ifndef AP_AIRSPEED_BACKEND_DEFAULT_ENABLED

@@ -23,7 +23,7 @@
 
 #ifndef HAL_PARACHUTE_ENABLED
 // default to parachute enabled to match previous configs
-#define HAL_PARACHUTE_ENABLED 1
+#define HAL_PARACHUTE_ENABLED 0
 #endif
 
 #if HAL_PARACHUTE_ENABLED
