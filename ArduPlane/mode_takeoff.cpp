@@ -113,13 +113,28 @@ void ModeTakeoff::run()
 
 void ModeTakeoff::navigate()
 {
-    // We put this get_forward_speed in navigate so that it runs at a lower rate
-    // As it is a relatively heavy function (compute cos and sin and stuff)
-    if (!plane.speedController.get_forward_speed(current_speed))    
-    {
+    // Position and velocity check
+    bool have_valid_position_and_home = plane.current_loc.initialised() && AP::ahrs().home_is_set();
+    bool have_speed = plane.speedController.get_forward_speed(current_speed);
+    if (!have_valid_position_and_home || !have_speed) {
         plane.arming.disarm(AP_Arming::Method::EKFFAILSAFE, false);
+        plane.set_mode(Mode::Number::MANUAL, ModeReason::EKF_FAILSAFE);
         return;
     }
+
+    // Check for optional timeout
+    if (plane.g2.takeoff_timeout > 0) 
+    {
+        if (takeoff_start_ms == 0) {
+            takeoff_start_ms = AP_HAL::millis();
+        } else if (AP_HAL::millis() - takeoff_start_ms > (uint32_t)(1000U * plane.g2.takeoff_timeout)) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Takeoff timeout at %.1f m/s", current_speed);
+            plane.arming.disarm(AP_Arming::Method::TAKEOFFTIMEOUT, false);
+            plane.set_mode(Mode::Number::MANUAL, ModeReason::FAILSAFE);
+            return;
+        }
+    }
+    
 
     plane.speedController.set_target_speed(takeoff_speed * 1.1f);   // Set a slightly higher target speed for margin
     plane.alt_pitch_controller.set_target_altitude(target_alt * 100);   // Always set target depth, but update() method only pitch down if has reached sufficient speed
