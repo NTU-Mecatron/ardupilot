@@ -9,15 +9,31 @@ extern const AP_HAL::HAL& hal;
 
 // Parameter information
 const AP_Param::GroupInfo AP_AltitudeController::var_info[] = {
-    // PID Params: altitude error -> pitch angle
-    // Luc_TODO: change this to only PI parameters, limit the number of possible params
-    AP_SUBGROUPINFO(_pid_alt, "_ALT_", 0, AP_AltitudeController, AC_PID),
+    // @Param: CTRL_P
+    // @DisplayName: Altitude controller P gain
+    // @Description: Altitude controller P gain. Converts the altitude error (meters) into a desired pitch angle (radians)
+    // @Range: 0.1 0.3
+    // @User: Standard
+
+    // @Param: CTRL_I
+    // @DisplayName: Altitude controller I gain
+    // @Description: Altitude controller I gain. Integrates the altitude error (meters) over time to correct steady-state errors
+    // @Range: 0.001 0.1
+    // @User: Standard
+
+    // @Param: CTRL_IMAX
+    // @DisplayName: Altitude controller I maximum
+    // @Description: Maximum value for the integral term (radians) to prevent windup
+    // @Range: 0.1 0.2
+    // @User: Standard
+    AP_SUBGROUPINFO(_pid_alt, "CTRL_", 0, AP_AltitudeController, AC_PI),
 
     // @Param: BUOY_FF
     // @DisplayName: Buoyancy feedforward pitch angle (degrees)
-    // @Description: Pitch angle to counteract buoyancy (degrees) at typical operating speed (SCALING_SPEED); should be negative number to pitch down
+    // @Description: Pitch angle to counteract buoyancy (degrees) at typical operating speed (SCALING_SPEED) in magnitude
     // @Increment: 1.0
-    AP_GROUPINFO("BUOY_FF", 1, AP_AltitudeController, _buoyancy_ff_deg, -5.0f),
+    // @User: Standard
+    AP_GROUPINFO("BUOYANCY_FF", 1, AP_AltitudeController, _buoyancy_ff_deg, 5.0f),
 
     AP_GROUPEND
 };
@@ -54,10 +70,9 @@ void AP_AltitudeController::update(float speed_scaler)
 
     float target_alt_m = _target_alt_cm * 0.01f;
 
-    // Update PID controller with altitude error
-    // PID input is altitude in meters, output is desired pitch in radians
-    bool limit_i_gain = true;
-    float pitch_rad = _pid_alt.update_all(target_alt_m * speed_scaler, current_alt_m * speed_scaler, dt, limit_i_gain);
+    // Update PI controller with altitude error (note that the arguments is measurement followed by target, different from AC_PID class)
+    // PI input is altitude in meters, output is desired pitch in radians
+    float pitch_rad = _pid_alt.update(current_alt_m * speed_scaler, target_alt_m * speed_scaler, dt);
 
     // Actual feedforward pitch is dependent on speed; the higher speed, the lower pitch ff needed
     // speed_scaler = g.scaling_speed / current_speed, so we multiply by speed_scaler to adjust for current speed
