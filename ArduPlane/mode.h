@@ -772,6 +772,8 @@ public:
 
     void navigate() override;
 
+    void run() override;
+
     bool allows_throttle_nudging() const override { return true; }
 
     bool does_auto_navigation() const override { return true; }
@@ -784,23 +786,15 @@ public:
 protected:
     AP_Float target_alt;
     AP_Float takeoff_speed;
-    AP_Int8 surface_pitch;
+    AP_Int8 surface_elevator;
     AP_Int8 takeoff_in_circle;
 
     int32_t initial_heading_cd = -1;
-
-    bool takeoff_started;
+    float current_speed = 0.0;
 
     Location start_loc;
 
     bool _enter() override;
-
-    enum TakeoffState {
-        ACCELERATING = 0,
-        TAKING_OFF = 1,
-        REACHED_TARGET_ALT = 2
-    };
-    TakeoffState current_takeoff_state;
 };
 
 #if HAL_SOARING_ENABLED
