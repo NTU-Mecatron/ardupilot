@@ -470,11 +470,11 @@ void Plane::set_throttle(void)
             SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, plane.nav_scripting.throttle_pct);
     } else
 #endif
-           if (control_mode == &mode_stabilize ||
-               control_mode == &mode_training ||
-               control_mode == &mode_acro ||
-               control_mode == &mode_fbwa ||
-               control_mode == &mode_autotune) {
+    if (control_mode == &mode_stabilize ||
+        control_mode == &mode_training ||
+        control_mode == &mode_acro ||
+        control_mode == &mode_fbwa ||
+        control_mode == &mode_autotune) {
         // a manual throttle mode
         if (g.throttle_passthru_stabilize) {
             // manual pass through of throttle while in FBWA or
