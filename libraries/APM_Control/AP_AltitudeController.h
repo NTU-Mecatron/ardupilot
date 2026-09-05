@@ -2,7 +2,7 @@
 
 #include <AP_Common/AP_Common.h>
 #include <AP_Param/AP_Param.h>
-#include <AC_PID/AC_PID.h>
+#include <AC_PID/AC_PI.h>
 #include <AP_Math/AP_Math.h>
 #include <AP_AHRS/AP_AHRS.h>
 
@@ -44,8 +44,8 @@ private:
     // AHRS reference for getting altitude and climb rate
     AP_AHRS &_ahrs;
 
-    // Default PI controller with IMAX, estimated with 1m error == 15 deg pitch, I gain capped at 10 deg
-    AC_PID _pid_alt{0.25f, 0.025f, 0.0f, 0.0f, 0.175f, 0.0f, 0.0f, 0.0f};
+    // Default PI controller with IMAX, estimated with 1m error == 10 deg pitch, I_gain capped at 10 deg
+    AC_PI _pid_alt{0.175f, 0.025f, 0.175f};
 
     // Parameters
     AP_Float _buoyancy_ff_deg;             // Buoyancy feedforward term (degrees)
