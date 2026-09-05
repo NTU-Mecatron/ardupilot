@@ -58,106 +58,6 @@ void Plane::throttle_slew_limit(SRV_Channel::Aux_servo_function_t func)
     SRV_Channels::set_slew_rate(func, slewrate, 100, G_Dt);
 }
 
-/* We want to suppress the throttle if we think we are on the ground and in an autopilot controlled throttle mode.
-
-   Disable throttle if following conditions are met:
-   *       1 - We are in Circle mode (which we use for short term failsafe), or in FBW-B or higher
-   *       AND
-   *       2 - Our reported altitude is within 10 meters of the home altitude.
-   *       3 - Our reported speed is under 5 meters per second.
-   *       4 - We are not performing a takeoff in Auto mode or takeoff speed/accel not yet reached
-   *       OR
-   *       5 - Home location is not set
-   *       OR
-   *       6- Landing does not want to allow throttle
-*/
-bool Plane::suppress_throttle(void)
-{
-#if PARACHUTE == ENABLED
-    if (control_mode->does_auto_throttle() && parachute.release_initiated()) {
-        // throttle always suppressed in auto-throttle modes after parachute release initiated
-        throttle_suppressed = true;
-        return true;
-    }
-#endif
-
-    if (landing.is_throttle_suppressed()) {
-        return true;
-    }
-
-    if (!throttle_suppressed) {
-        // we've previously met a condition for unsupressing the throttle
-        return false;
-    }
-    if (!control_mode->does_auto_throttle()) {
-        // the user controls the throttle
-        throttle_suppressed = false;
-        return false;
-    }
-
-    bool gps_movement = (gps.status() >= AP_GPS::GPS_OK_FIX_2D && gps.ground_speed() >= 5);
-    
-    if ((control_mode == &mode_auto &&
-         auto_state.takeoff_complete == false) ||
-        control_mode == &mode_takeoff) {
-
-        uint32_t launch_duration_ms = ((int32_t)g.takeoff_throttle_delay)*100 + 2000;
-        if (is_flying() &&
-            millis() - started_flying_ms > MAX(launch_duration_ms, 5000U) && // been flying >5s in any mode
-            adjusted_relative_altitude_cm() > 500 && // are >5m above AGL/home
-            labs(ahrs.pitch_sensor) < 3000 && // not high pitch, which happens when held before launch
-            gps_movement) { // definite gps movement
-            // we're already flying, do not suppress the throttle. We can get
-            // stuck in this condition if we reset a mission and cmd 1 is takeoff
-            // but we're currently flying around below the takeoff altitude
-            throttle_suppressed = false;
-            return false;
-        }
-        if (auto_takeoff_check()) {
-            // we're in auto takeoff 
-            throttle_suppressed = false;
-            auto_state.baro_takeoff_alt = barometer.get_altitude();
-            return false;
-        }
-        // keep throttle suppressed
-        return true;
-    }
-    
-    if (fabsf(relative_altitude) >= 10.0f) {
-        // we're more than 10m from the home altitude
-        throttle_suppressed = false;
-        return false;
-    }
-
-    if (gps_movement) {
-        // if we have an airspeed sensor, then check it too, and
-        // require 5m/s. This prevents throttle up due to spiky GPS
-        // groundspeed with bad GPS reception
-#if AP_AIRSPEED_ENABLED
-        if ((!ahrs.using_airspeed_sensor()) || airspeed.get_airspeed() >= 5) {
-            // we're moving at more than 5 m/s
-            throttle_suppressed = false;
-            return false;        
-        }
-#else
-        // no airspeed sensor, so we trust that the GPS's movement is truthful
-        throttle_suppressed = false;
-        return false;
-#endif
-    }
-
-#if HAL_QUADPLANE_ENABLED
-    if (quadplane.is_flying()) {
-        throttle_suppressed = false;
-        return false;
-    }
-#endif
-
-    // throttle remains suppressed
-    return true;
-}
-
-
 /*
   mixer for elevon and vtail channels setup using designated servo
   function values. This mixer operates purely on scaled values,
@@ -562,23 +462,6 @@ void Plane::set_throttle(void)
         return;
     }
 
-    if (suppress_throttle()) {
-        if (g.throttle_suppress_manual) {
-            // manual pass through of throttle while throttle is suppressed
-            SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, get_throttle_input(true));
-
-        } else if (landing.is_flaring() && landing.use_thr_min_during_flare() ) {
-            // throttle is suppressed (above) to zero in final flare in auto mode, but we allow instead thr_min if user prefers, eg turbines:
-            SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, aparm.throttle_min.get());
-
-        } else {
-            // default
-            SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, 0.0);
-
-        }
-        return;
-    }
-
     // Update voltage scaling
     g2.fwd_batt_cmp.update();
 
@@ -587,11 +470,11 @@ void Plane::set_throttle(void)
             SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, plane.nav_scripting.throttle_pct);
     } else
 #endif
-           if (control_mode == &mode_stabilize ||
-               control_mode == &mode_training ||
-               control_mode == &mode_acro ||
-               control_mode == &mode_fbwa ||
-               control_mode == &mode_autotune) {
+    if (control_mode == &mode_stabilize ||
+        control_mode == &mode_training ||
+        control_mode == &mode_acro ||
+        control_mode == &mode_fbwa ||
+        control_mode == &mode_autotune) {
         // a manual throttle mode
         if (g.throttle_passthru_stabilize) {
             // manual pass through of throttle while in FBWA or
