@@ -30,7 +30,7 @@ const AP_Param::GroupInfo AP_AltitudeController::var_info[] = {
 
     // @Param: BUOY_FF
     // @DisplayName: Buoyancy feedforward pitch angle (degrees)
-    // @Description: Pitch angle to counteract buoyancy (degrees) at typical operating speed (SCALING_SPEED) in magnitude
+    // @Description: Pitch down angle to counteract buoyancy (degrees) at typical operating speed (SCALING_SPEED)
     // @Increment: 1.0
     // @User: Standard
     AP_GROUPINFO("BUOYANCY_FF", 1, AP_AltitudeController, _buoyancy_ff_deg, 5.0f),
@@ -76,7 +76,7 @@ void AP_AltitudeController::update(float speed_scaler)
 
     // Actual feedforward pitch is dependent on speed; the higher speed, the lower pitch ff needed
     // speed_scaler = g.scaling_speed / current_speed, so we multiply by speed_scaler to adjust for current speed
-    pitch_rad += radians(_buoyancy_ff_deg) * speed_scaler;
+    pitch_rad -= radians(_buoyancy_ff_deg) * speed_scaler;
 
     // Convert to centidegrees
     _desired_pitch_cd = degrees(pitch_rad) * 100.0f;
