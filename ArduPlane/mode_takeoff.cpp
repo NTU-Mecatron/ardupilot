@@ -24,14 +24,14 @@ const AP_Param::GroupInfo ModeTakeoff::var_info[] = {
     // @User: Standard
     AP_GROUPINFO("SPEED", 2, ModeTakeoff, takeoff_speed, 1.5),
 
-    // @Param: SURFACE_ELEVATOR
+    // @Param: LVL_PITCH
     // @DisplayName: Desired surface elevator deflection
     // @Description: When AUV speed is lower than AIRSPEED_MIN, the elevator will be hard-set to this deflection to avoid choppy pitch control.
     // @Range: 0 45
     // @Increment: 1
     // @Units: deg
     // @User: Standard
-    AP_GROUPINFO("SURFACE_ELEVATOR", 3, ModeTakeoff, surface_elevator, 20),
+    AP_GROUPINFO("LVL_PITCH", 3, ModeTakeoff, surface_elevator, 20),
 
     // @Param: IN_CIRCLE
     // @DisplayName: Takeoff in circle
