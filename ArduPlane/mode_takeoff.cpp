@@ -59,17 +59,14 @@ bool ModeTakeoff::_enter()
     }
 
     initial_heading_cd = -1;
+    has_logged_reached_takeoff_speed = false;
+    has_logged_reached_target_alt = false;
     return true;
 }
 
 void ModeTakeoff::update()
 {
-    // don't setup waypoints if we dont have a valid position and home!
-    if (!(plane.current_loc.initialised() && AP::ahrs().home_is_set())) {
-        plane.arming.disarm(AP_Arming::Method::EKFFAILSAFE, false);
-        return;
-    }
-
+    // Always calculate throttle to achieve given speed
     plane.calc_throttle();
 
     // If we are too slow, pitch and yaw will be heavily affected by waves so it is better to hardcode elevator and rudder
@@ -82,14 +79,25 @@ void ModeTakeoff::update()
     {
         plane.calc_nav_pitch();
         plane.calc_nav_yaw_ground();    // Luc_TODO: implement a general calc_nav_yaw
+
+        if (!has_logged_reached_takeoff_speed) {
+            has_logged_reached_takeoff_speed = true;
+            const float tkoff_speed = takeoff_speed;
+            gcs().send_text(MAV_SEVERITY_INFO, "Reached takeoff speed of %.1f", tkoff_speed);
+        }
     }
 
     // Check if reached target alt (which should be a negative number)
-    const uint16_t altitude = plane.relative_ground_altitude(false,true);
-    if (altitude >= target_alt) {
+    const float altitude = plane.relative_ground_altitude(false,true);
+    if (-altitude <= -target_alt) {
         plane.set_flight_stage(AP_FixedWing::FlightStage::TAKEOFF);
     } else {
         plane.set_flight_stage(AP_FixedWing::FlightStage::NORMAL);
+        if (!has_logged_reached_target_alt) {
+            has_logged_reached_target_alt = true;
+            const float alt = target_alt;
+            gcs().send_text(MAV_SEVERITY_INFO, "Current alt %.1f m, Reached target altitude of %.1f m", altitude, alt);
+        }
     }
 }
 
