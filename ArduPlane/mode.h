@@ -791,6 +791,7 @@ protected:
 
     int32_t initial_heading_cd = -1;
     float current_speed = 0.0;
+    uint32_t takeoff_start_ms = 0;
 
     bool has_logged_reached_takeoff_speed = false;
     bool has_logged_reached_target_alt = false;
