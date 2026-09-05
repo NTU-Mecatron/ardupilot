@@ -5,7 +5,7 @@
 #include <GCS_MAVLink/GCS_config.h>
 
 #ifndef HAL_ADSB_ENABLED
-#define HAL_ADSB_ENABLED BOARD_FLASH_SIZE > 1024
+#define HAL_ADSB_ENABLED 0
 #endif
 
 #ifndef HAL_ADSB_BACKEND_DEFAULT_ENABLED
