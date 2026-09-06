@@ -28,6 +28,22 @@ const AP_Param::GroupInfo AP_Arming_Plane::var_info[] = {
     AP_GROUPEND
 };
 
+/*
+  Check that the min max for each rc channel is not too low/high.
+  Originally, plane does not have this because their throttle channel is default one directional.
+  Now that it is reversible, it is the same as copter/sub, and should be checked.
+ */
+bool AP_Arming_Plane::rc_calibration_checks(bool display_failure)
+{
+    const RC_Channel *channels[] = {
+        plane.channel_roll,
+        plane.channel_pitch,
+        plane.channel_throttle,
+        plane.channel_rudder    // Equivalent of yaw channel
+    };
+    return rc_checks_copter_sub(display_failure, channels);
+}
+
 // expected to return true if the terrain database is required to have
 // all data loaded
 bool AP_Arming_Plane::terrain_database_required() const
@@ -53,7 +69,7 @@ bool AP_Arming_Plane::pre_arm_checks(bool display_failure)
     }
     //are arming checks disabled?
     if (checks_to_perform == 0) {
-        return mandatory_checks(display_failure);
+        return true;
     }
     if (hal.util->was_watchdog_armed()) {
         // on watchdog reset bypass arming checks to allow for
@@ -91,11 +107,6 @@ bool AP_Arming_Plane::pre_arm_checks(bool display_failure)
         ret = false;
     }
 
-    if (plane.aparm.airspeed_min < MIN_AIRSPEED_MIN) {
-        check_failed(display_failure, "AIRSPEED_MIN too low (%i < %i)", plane.aparm.airspeed_min.get(), MIN_AIRSPEED_MIN);
-        ret = false;
-    }
-
     if (plane.channel_throttle->get_reverse() && 
         Plane::ThrFailsafe(plane.g.throttle_fs_enabled.get()) != Plane::ThrFailsafe::Disabled &&
         plane.g.throttle_fs_value < 
@@ -103,8 +114,6 @@ bool AP_Arming_Plane::pre_arm_checks(bool display_failure)
         check_failed(display_failure, "Invalid THR_FS_VALUE for rev throttle");
         ret = false;
     }
-
-    ret &= rc_received_if_enabled_check(display_failure);
 
 #if HAL_QUADPLANE_ENABLED
     ret &= quadplane_checks(display_failure);
@@ -138,19 +147,6 @@ bool AP_Arming_Plane::pre_arm_checks(bool display_failure)
 
     return ret;
 }
-
-bool AP_Arming_Plane::mandatory_checks(bool display_failure)
-{
-    bool ret = true;
-
-    ret &= rc_received_if_enabled_check(display_failure);
-
-    // Call parent class checks
-    ret &= AP_Arming::mandatory_checks(display_failure);
-
-    return ret;
-}
-
 
 #if HAL_QUADPLANE_ENABLED
 bool AP_Arming_Plane::quadplane_checks(bool display_failure)
@@ -331,15 +327,6 @@ bool AP_Arming_Plane::arm(const AP_Arming::Method method, const bool do_arming_c
  */
 bool AP_Arming_Plane::disarm(const AP_Arming::Method method, bool do_disarm_checks)
 {
-    if (do_disarm_checks &&
-        (AP_Arming::method_is_GCS(method) ||
-         method == AP_Arming::Method::RUDDER)) {
-        if (plane.is_flying()) {
-            // don't allow mavlink or rudder disarm while flying
-            return false;
-        }
-    }
-    
     if (do_disarm_checks && method == AP_Arming::Method::RUDDER) {
         // option must be enabled:
         if (get_rudder_arming_type() != AP_Arming::RudderArming::ARMDISARM) {
@@ -467,22 +454,4 @@ bool AP_Arming_Plane::mission_checks(bool report)
     }
 #endif
     return ret;
-}
-
-// Checks rc has been received if it is configured to be used
-bool AP_Arming_Plane::rc_received_if_enabled_check(bool display_failure)
-{
-    if (rc().enabled_protocols() == 0) {
-        // No protocols enabled, will never get RC, don't block arming
-        return true;
-    }
-
-    // If RC failsafe is enabled we must receive RC before arming
-    if ((Plane::ThrFailsafe(plane.g.throttle_fs_enabled.get()) == Plane::ThrFailsafe::Enabled) && 
-        !(rc().has_had_rc_receiver() || rc().has_had_rc_override())) {
-        check_failed(display_failure, "Waiting for RC");
-        return false;
-    }
-
-    return true;
 }

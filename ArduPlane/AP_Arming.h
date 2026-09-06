@@ -8,6 +8,10 @@
 
 /*
   a plane specific arming class
+  This has been modified, taking inspiration from Sub, to make it work with Torp AUV.
+  Main changes:
+  - Skip RC check (AUV most of the time does not have RC connection).
+  - Skip disarm flying checks.
  */
 class AP_Arming_Plane : public AP_Arming
 {
@@ -21,6 +25,7 @@ public:
     /* Do not allow copies */
     CLASS_NO_COPY(AP_Arming_Plane);
 
+    bool rc_calibration_checks(bool display_failure) override;
     bool pre_arm_checks(bool report) override;
     bool arm_checks(AP_Arming::Method method) override;
 
@@ -33,18 +38,12 @@ public:
     void update_soft_armed();
     bool get_delay_arming() const { return delay_arming; };
 
-    // mandatory checks that cannot be bypassed.  This function will only be called if ARMING_CHECK is zero or arming forced
-    bool mandatory_checks(bool display_failure) override;
-
 protected:
     bool ins_checks(bool report) override;
     bool terrain_database_required() const override;
 
     bool quadplane_checks(bool display_failure);
     bool mission_checks(bool report) override;
-
-    // Checks rc has been received if it is configured to be used
-    bool rc_received_if_enabled_check(bool display_failure);
 
 private:
     void change_arm_state(void);
