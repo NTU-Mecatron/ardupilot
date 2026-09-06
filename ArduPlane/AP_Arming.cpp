@@ -28,6 +28,22 @@ const AP_Param::GroupInfo AP_Arming_Plane::var_info[] = {
     AP_GROUPEND
 };
 
+/*
+  Check that the min max for each rc channel is not too low/high.
+  Originally, plane does not have this because their throttle channel is default one directional.
+  Now that it is reversible, it is the same as copter/sub, and should be checked.
+ */
+bool AP_Arming_Plane::rc_calibration_checks(bool display_failure)
+{
+    const RC_Channel *channels[] = {
+        plane.channel_roll,
+        plane.channel_pitch,
+        plane.channel_throttle,
+        plane.channel_rudder    // Equivalent of yaw channel
+    };
+    return rc_checks_copter_sub(display_failure, channels);
+}
+
 // expected to return true if the terrain database is required to have
 // all data loaded
 bool AP_Arming_Plane::terrain_database_required() const

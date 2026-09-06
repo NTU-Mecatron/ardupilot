@@ -21,6 +21,7 @@ public:
     /* Do not allow copies */
     CLASS_NO_COPY(AP_Arming_Plane);
 
+    bool rc_calibration_checks(bool display_failure) override;
     bool pre_arm_checks(bool report) override;
     bool arm_checks(AP_Arming::Method method) override;
 
