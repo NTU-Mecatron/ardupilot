@@ -8,6 +8,10 @@
 
 /*
   a plane specific arming class
+  This has been modified, taking inspiration from Sub, to make it work with Torp AUV.
+  Main changes:
+  - Skip RC check (AUV most of the time does not have RC connection).
+  - Skip disarm flying checks.
  */
 class AP_Arming_Plane : public AP_Arming
 {
