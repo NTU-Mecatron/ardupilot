@@ -5,8 +5,11 @@
 #include <AC_PID/AC_PID.h>
 #include "AP_AutoTune.h"
 
-// Single rate/angle attitude axis controller, shared by roll, pitch and yaw.
-// Each axis is independent: no airspeed, bank-angle, or cross-axis coupling.
+/*
+  Single rate/angle attitude axis controller, shared by roll, pitch and yaw.
+  Convert desired angle/angle rate to servo commands for control surfaces.
+  Designed for torp AUV, inspired by existing roll controller.
+ */
 class AP_AttitudeController
 {
 public:
@@ -15,7 +18,7 @@ public:
     /* Do not allow copies */
     CLASS_NO_COPY(AP_AttitudeController);
 
-    // get actuator output for direct rate control
+    // get actuator output (centidegrees between -4500 and 4500) for direct rate control
     // desired_rate is in deg/sec. scaler is the surface/fin effectiveness scaler
     float get_rate_out(float desired_rate, float scaler, bool disable_integrator = false);
 
@@ -24,11 +27,22 @@ public:
 
     // setup a one loop FF scale multiplier. This replaces any previous scale applied
     // so should only be used when only one source of scaling is needed
+    // preserved this for backward compatibility
     void set_ff_scale(float _ff_scale) { ff_scale = _ff_scale; }
 
-    void reset_I();
+    // reset I gain only
+    void reset_I()
+    {
+        _pid_info.I = 0;
+        rate_pid.reset_I();
+    }
 
-    void reset_rate_PID();
+    // reset the entire rate PID controller
+    void reset_rate_PID()
+    {
+        rate_pid.reset_I();
+        rate_pid.reset_filter();
+    }
 
     // rate control is always enabled - kept so existing call sites keep compiling
     bool enabled() const { return true; }
@@ -44,10 +58,7 @@ public:
         rate_pid.set_integrator(rate_pid.get_i() * 0.995);
     }
 
-    const AP_PIDInfo& get_pid_info(void) const
-    {
-        return _pid_info;
-    }
+    const AP_PIDInfo& get_pid_info(void) const { return _pid_info; }
 
     // set the PID notch sample rates
     void set_notch_sample_rate(float sample_rate) { rate_pid.set_notch_sample_rate(sample_rate); }
@@ -82,5 +93,8 @@ private:
     AP_PIDInfo _pid_info;
 
     // return the measured body rate (rad/sec) for this axis
-    float measured_rate(void) const;
+    float _measured_rate(void) const;
+
+    // limit the desired rate to the maximum allowed by the controller
+    float _limit_rate(float rate) const;
 };

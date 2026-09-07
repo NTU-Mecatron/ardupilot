@@ -26,40 +26,27 @@ extern const AP_HAL::HAL& hal;
 
 const AP_Param::GroupInfo AP_AttitudeController::var_info[] = {
 
-    // @Param: 2SRV_TCONST
+    // @Param: _TCONST
     // @DisplayName: Attitude axis time constant
     // @Description: Time constant in seconds from demanded to achieved axis angle. Most models respond well to 0.5. May be reduced for faster responses, but setting lower than a model can achieve will not help.
     // @Range: 0.4 1.0
     // @Units: s
     // @Increment: 0.1
     // @User: Advanced
-    AP_GROUPINFO("2SRV_TCONST",      0, AP_AttitudeController, gains.tau,       0.5f),
+    AP_GROUPINFO("_TCONST", 1, AP_AttitudeController, gains.tau, 0.5f),
 
-    // index 1 to 3 reserved for old PID values
-
-    // @Param: 2SRV_RMAX_UP
-    // @DisplayName: Attitude axis max positive rate
+    // @Param: _MAX_RATE
+    // @DisplayName: Attitude axis max rate
     // @Description: This sets the maximum positive rate that the attitude controller will demand (degrees/sec) in angle stabilized modes. Setting it to zero disables this limit.
     // @Range: 0 180
     // @Units: deg/s
     // @Increment: 1
     // @User: Advanced
-    AP_GROUPINFO("2SRV_RMAX_UP",   4, AP_AttitudeController, gains.rmax_pos,       0),
-
-    // @Param: 2SRV_RMAX_DN
-    // @DisplayName: Attitude axis max negative rate
-    // @Description: This sets the maximum negative rate that the attitude controller will demand (degrees/sec) in angle stabilized modes. Setting it to zero disables this limit.
-    // @Range: 0 180
-    // @Units: deg/s
-    // @Increment: 1
-    // @User: Advanced
-    AP_GROUPINFO("2SRV_RMAX_DN",   5, AP_AttitudeController, gains.rmax_neg,       0),
-
-    // index 6 to 8 reserved for old roll-compensation/IMAX/FF values
+    AP_GROUPINFO("_MAX_RATE", 2, AP_AttitudeController, gains.rmax_pos, 30),
 
     // @Param: _RATE_P
     // @DisplayName: Attitude axis rate controller P gain
-    // @Description: Rate controller P gain. Corrects in proportion to the difference between the desired rate vs actual rate
+    // @Description: Rate controller P gain. Corrects in proportion to the difference between the desired rate vs actual rate. Note that rate = radians(rate) * scaler * scaler.
     // @Range: 0.08 0.35
     // @Increment: 0.005
     // @User: Standard
@@ -160,28 +147,38 @@ AP_AttitudeController::AP_AttitudeController(const AP_FixedWing &parms, AP_AutoT
     rate_pid.set_slew_limit_scale(45);
 }
 
-// return the measured body rate (rad/sec) for this axis
-float AP_AttitudeController::measured_rate(void) const
+float AP_AttitudeController::_measured_rate(void) const
 {
     const Vector3f &gyro = AP::ahrs().get_gyro();
     switch (_axis) {
-    case AP_AutoTune::AUTOTUNE_ROLL:
-        return gyro.x;
-    case AP_AutoTune::AUTOTUNE_PITCH:
-        return gyro.y;
-    case AP_AutoTune::AUTOTUNE_YAW:
-        return gyro.z;
+        case AP_AutoTune::AUTOTUNE_ROLL:
+            return gyro.x;
+        case AP_AutoTune::AUTOTUNE_PITCH:
+            return gyro.y;
+        case AP_AutoTune::AUTOTUNE_YAW:
+            return gyro.z;
     }
     return 0;
 }
 
-// get actuator output for direct rate control
-// desired_rate is in deg/sec. scaler is the surface/fin effectiveness scaler
+float AP_AttitudeController::_limit_rate(float rate) const
+{
+    if (!gains.rmax_pos) {
+        return rate;
+    } else if (rate < -gains.rmax_pos) {
+        return -gains.rmax_pos;
+    } else if (rate > gains.rmax_pos) {
+        return gains.rmax_pos;
+    }
+    return rate;
+}
+
 float AP_AttitudeController::get_rate_out(float desired_rate, float scaler, bool disable_integrator)
 {
     const float dt = AP::scheduler().get_loop_period_s();
     bool limit_I = fabsf(_last_out) >= 45 || disable_integrator;
-    const float rate = measured_rate();
+    const float rate = _measured_rate();
+    desired_rate = _limit_rate(desired_rate);
 
     // the P and I elements are scaled by sq(scaler). To use an
     // unmodified AC_PID object we scale the inputs and calculate FF separately
@@ -232,7 +229,6 @@ float AP_AttitudeController::get_rate_out(float desired_rate, float scaler, bool
     return constrain_float(out * 100, -4500, 4500);
 }
 
-// get actuator output from an angle error (centidegrees), via the rate controller
 float AP_AttitudeController::get_servo_out(int32_t angle_err, float scaler, bool disable_integrator)
 {
     if (gains.tau < 0.05f) {
@@ -243,31 +239,9 @@ float AP_AttitudeController::get_servo_out(int32_t angle_err, float scaler, bool
     angle_err_deg = angle_err * 0.01f;
     float desired_rate = angle_err_deg / gains.tau;
 
-    // Limit the demanded rate
-    if (gains.rmax_pos && desired_rate > gains.rmax_pos) {
-        desired_rate = gains.rmax_pos;
-    } else if (gains.rmax_neg && desired_rate < -gains.rmax_neg) {
-        desired_rate = -gains.rmax_neg;
-    }
-
     return get_rate_out(desired_rate, scaler, disable_integrator);
 }
 
-void AP_AttitudeController::reset_I()
-{
-    _pid_info.I = 0;
-    rate_pid.reset_I();
-}
-
-void AP_AttitudeController::reset_rate_PID()
-{
-    rate_pid.reset_I();
-    rate_pid.reset_filter();
-}
-
-/*
-  start an autotune
- */
 void AP_AttitudeController::autotune_start(void)
 {
     if (autotune == nullptr) {
@@ -284,9 +258,6 @@ void AP_AttitudeController::autotune_start(void)
     }
 }
 
-/*
-  restore autotune gains
- */
 void AP_AttitudeController::autotune_restore(void)
 {
     if (autotune != nullptr) {
