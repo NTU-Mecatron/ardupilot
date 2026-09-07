@@ -513,13 +513,13 @@ const AP_Param::Info Plane::var_info[] = {
     GSCALAR(initial_mode,        "INITIAL_MODE",     Mode::Number::MANUAL),
 
     // @Param: ROLL_LIMIT_DEG
-    // @DisplayName: Maximum Bank Angle
-    // @Description: Maximum bank angle commanded in modes with stabilized limits. Increase this value for sharper turns, but decrease to prevent accelerated stalls.
+    // @DisplayName: Maximum Roll Angle
+    // @Description: Maximum roll angle commanded in modes with stabilized limits. This should be set to really small values for torp AUV.
     // @Units: deg
     // @Range: 0 90
     // @Increment: 0.1
     // @User: Standard
-    ASCALAR(roll_limit,          "ROLL_LIMIT_DEG",    ROLL_LIMIT_DEG),
+    ASCALAR(roll_limit,          "RLL_LIMIT_DEG",    ROLL_LIMIT_DEG),
 
     // @Param: PTCH_LIM_MAX_DEG
     // @DisplayName: Maximum Pitch Angle
