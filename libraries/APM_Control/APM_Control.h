@@ -1,4 +1,2 @@
-#include "AP_RollController.h"
-#include "AP_PitchController.h"
+#include "AP_AttitudeController.h"
 #include "AP_SpeedController.h"
-#include "AP_YawController.h"

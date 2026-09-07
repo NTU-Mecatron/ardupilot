@@ -71,7 +71,7 @@ void ModeAcro::stabilize()
         // 'stabilize' to true, which disables the roll integrator
         SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, plane.rollController.get_servo_out(roll_error_cd,
                                                                                              speed_scaler,
-                                                                                             true, false));
+                                                                                             true));
     } else {
         /*
           aileron stick is non-zero, use pure rate control until the
@@ -95,7 +95,7 @@ void ModeAcro::stabilize()
         plane.nav_pitch_cd = acro_state.locked_pitch_cd;
         SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, plane.pitchController.get_servo_out(plane.nav_pitch_cd - ahrs.pitch_sensor,
                                                                                                speed_scaler,
-                                                                                               false, false));
+                                                                                               false));
     } else {
         /*
           user has non-zero pitch input, use a pure rate controller
@@ -200,7 +200,7 @@ void ModeAcro::stabilize_quaternion()
     // convert to desired body rates
     desired_rates.x /= plane.rollController.tau();
     desired_rates.y /= plane.pitchController.tau();
-    desired_rates.z /= plane.pitchController.tau(); // no yaw tau parameter, use pitch
+    desired_rates.z /= plane.yawController.tau();
 
     desired_rates *= degrees(1.0);
 

@@ -815,16 +815,16 @@ const AP_Param::Info Plane::var_info[] = {
 #endif
 
     // @Group: RLL
-    // @Path: ../libraries/APM_Control/AP_RollController.cpp
-    GOBJECT(rollController,         "RLL",   AP_RollController),
+    // @Path: ../libraries/APM_Control/AP_AttitudeController.cpp
+    GOBJECT(rollController,         "RLL",   AP_AttitudeController),
 
     // @Group: PTCH
-    // @Path: ../libraries/APM_Control/AP_PitchController.cpp
-    GOBJECT(pitchController,        "PTCH",  AP_PitchController),
+    // @Path: ../libraries/APM_Control/AP_AttitudeController.cpp
+    GOBJECT(pitchController,        "PTCH",  AP_AttitudeController),
 
     // @Group: YAW
-    // @Path: ../libraries/APM_Control/AP_YawController.cpp
-    GOBJECT(yawController,          "YAW",   AP_YawController),
+    // @Path: ../libraries/APM_Control/AP_AttitudeController.cpp
+    GOBJECT(yawController,          "YAW",   AP_AttitudeController),
 
 	// variables not in the g class which contain EEPROM saved variables
 

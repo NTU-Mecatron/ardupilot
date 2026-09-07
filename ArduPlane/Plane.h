@@ -220,9 +220,9 @@ private:
     AP_L1_Control L1_controller{ahrs, nullptr};
 
     // Attitude to servo controllers
-    AP_RollController rollController{aparm};
-    AP_PitchController pitchController{aparm};
-    AP_YawController yawController{aparm};
+    AP_AttitudeController rollController{aparm, AP_AutoTune::AUTOTUNE_ROLL};
+    AP_AttitudeController pitchController{aparm, AP_AutoTune::AUTOTUNE_PITCH};
+    AP_AttitudeController yawController{aparm, AP_AutoTune::AUTOTUNE_YAW};
     AP_SpeedController speedController{ahrs};
 
     // Training mode
