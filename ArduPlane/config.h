@@ -157,7 +157,7 @@
 // Autopilot control limits
 //
 #ifndef ROLL_LIMIT_DEG
- # define ROLL_LIMIT_DEG                         45
+ # define ROLL_LIMIT_DEG                         15
 #endif
 #ifndef PITCH_MAX
  # define PITCH_MAX                              20

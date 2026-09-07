@@ -48,7 +48,6 @@
 #include <AP_Beacon/AP_Beacon.h>
 
 #include <AP_AdvancedFailsafe/AP_AdvancedFailsafe.h>
-#include <APM_Control/APM_Control.h>
 #include <APM_Control/AP_AutoTune.h>
 #include <GCS_MAVLink/GCS_MAVLink.h>    // MAVLink GCS definitions
 #include <AP_Mount/AP_Mount.h>           // Camera/Antenna mount
@@ -61,8 +60,12 @@
 #include <AP_L1_Control/AP_L1_Control.h>
 #include <AP_RCMapper/AP_RCMapper.h>        // RC input mapping library
 
-#include <AP_Vehicle/AP_Vehicle.h>
+// Torp AUV-specific controllers
 #include <APM_Control/AP_AltitudeController.h>
+#include <APM_Control/AP_AttitudeController.h>
+#include <APM_Control/AP_SpeedController.h>
+
+#include <AP_Vehicle/AP_Vehicle.h>
 #include <AP_NavEKF2/AP_NavEKF2.h>
 #include <AP_NavEKF3/AP_NavEKF3.h>
 #include <AP_Mission/AP_Mission.h>     // Mission command library
@@ -220,9 +223,9 @@ private:
     AP_L1_Control L1_controller{ahrs, nullptr};
 
     // Attitude to servo controllers
-    AP_RollController rollController{aparm};
-    AP_PitchController pitchController{aparm};
-    AP_YawController yawController{aparm};
+    AP_AttitudeController rollController{aparm, AP_AutoTune::AUTOTUNE_ROLL};
+    AP_AttitudeController pitchController{aparm, AP_AutoTune::AUTOTUNE_PITCH};
+    AP_AttitudeController yawController{aparm, AP_AutoTune::AUTOTUNE_YAW};
     AP_SpeedController speedController{ahrs};
 
     // Training mode

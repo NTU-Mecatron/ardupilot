@@ -155,8 +155,7 @@ float Plane::stabilize_roll_get_roll_out()
     if (control_mode == &mode_stabilize && channel_roll->get_control_in() != 0) {
         disable_integrator = true;
     }
-    return rollController.get_servo_out(nav_roll_cd - ahrs.roll_sensor, speed_scaler, disable_integrator,
-                                        ground_mode && !(plane.flight_option_enabled(FlightOptions::DISABLE_GROUND_PID_SUPPRESSION)));
+    return rollController.get_servo_out(nav_roll_cd - ahrs.roll_sensor, speed_scaler, disable_integrator);
 }
 
 /*
@@ -228,8 +227,7 @@ float Plane::stabilize_pitch_get_pitch_out()
         demanded_pitch = landing.get_pitch_cd();
     }
 
-    return pitchController.get_servo_out(demanded_pitch - ahrs.pitch_sensor, speed_scaler, disable_integrator,
-                                         ground_mode && !(plane.flight_option_enabled(FlightOptions::DISABLE_GROUND_PID_SUPPRESSION)));
+    return pitchController.get_servo_out(demanded_pitch - ahrs.pitch_sensor, speed_scaler, disable_integrator);
 }
 
 /*
@@ -407,7 +405,7 @@ void Plane::calc_throttle()
 *****************************************/
 
 /*
-  calculate yaw control for coordinated flight
+  calculate yaw control, independent of roll, using rudder only
  */
 int16_t Plane::calc_nav_yaw_coordinated()
 {
@@ -416,39 +414,24 @@ int16_t Plane::calc_nav_yaw_coordinated()
     int16_t rudder_in = rudder_input();
 
     int16_t commanded_rudder;
-    bool using_rate_controller = false;
 
     // Received an external msg that guides yaw in the last 3 seconds?
     if (control_mode->is_guided_mode() &&
             plane.guided_state.last_forced_rpy_ms.z > 0 &&
             millis() - plane.guided_state.last_forced_rpy_ms.z < 3000) {
         commanded_rudder = plane.guided_state.forced_rpy_cd.z;
-    } else if (autotuning && g.acro_yaw_rate > 0 && yawController.rate_control_enabled()) {
-        // user is doing an AUTOTUNE with yaw rate control
-        const float rudd_expo = rudder_in_expo(true);
-        const float yaw_rate = (rudd_expo/SERVO_MAX) * g.acro_yaw_rate;
-        // add in the coordinated turn yaw rate to make it easier to fly while tuning the yaw rate controller
-        const float coordination_yaw_rate = degrees(GRAVITY_MSS * tanf(radians(nav_roll_cd*0.01f))/MAX(aparm.airspeed_min,smoothed_airspeed));
-        commanded_rudder = yawController.get_rate_out(yaw_rate+coordination_yaw_rate,  speed_scaler, false);
-        using_rate_controller = true;
+        yawController.reset_rate_PID();
     } else {
         if (control_mode == &mode_stabilize && rudder_in != 0) {
             disable_integrator = true;
         }
 
-        commanded_rudder = yawController.get_servo_out(speed_scaler, disable_integrator);
-
-        // add in rudder mixing from roll
-        commanded_rudder += SRV_Channels::get_output_scaled(SRV_Channel::k_aileron) * g.kff_rudder_mix;
-        commanded_rudder += rudder_in;
+        // rudder stick commands a yaw rate directly; no roll/airspeed coordination for an AUV
+        const float rudd_expo = rudder_in_expo(true);
+        const float yaw_rate = (rudd_expo/SERVO_MAX) * g.acro_yaw_rate;
+        commanded_rudder = yawController.get_rate_out(yaw_rate, speed_scaler, disable_integrator);
     }
 
-    if (!using_rate_controller) {
-        /*
-          When not running the yaw rate controller, we need to reset the rate
-        */
-        yawController.reset_rate_PID();
-    }
 
     return constrain_int16(commanded_rudder, -4500, 4500);
 }
