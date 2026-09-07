@@ -223,7 +223,6 @@ private:
     AP_RollController rollController{aparm};
     AP_PitchController pitchController{aparm};
     AP_YawController yawController{aparm};
-    AP_SteerController steerController{};
     AP_SpeedController speedController{ahrs};
 
     // Training mode
@@ -895,8 +894,6 @@ private:
     void stabilize_stick_mixing_fbw();
     void stabilize_yaw();
     int16_t calc_nav_yaw_coordinated();
-    int16_t calc_nav_yaw_course(void);
-    int16_t calc_nav_yaw_ground(void);
 
     // Log.cpp
     uint32_t last_log_fast_ms;

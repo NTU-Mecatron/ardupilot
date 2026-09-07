@@ -383,10 +383,6 @@ void GCS_MAVLINK_Plane::send_pid_tuning()
 #endif
         send_pid_info(pid_info, PID_TUNING_YAW, pid_info->actual);
     }
-    if (g.gcs_pid_mask & TUNING_BITS_STEER) {
-        pid_info = &plane.steerController.get_pid_info();
-        send_pid_info(pid_info, PID_TUNING_STEER, pid_info->actual);
-    }
     if ((g.gcs_pid_mask & TUNING_BITS_LAND) && (plane.flight_stage == AP_FixedWing::FlightStage::LAND)) {
         AP_AHRS &ahrs = AP::ahrs();
         const Vector3f &gyro = ahrs.get_gyro();

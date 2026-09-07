@@ -320,64 +320,17 @@ void Plane::stabilize_stick_mixing_fbw()
 
 
 /*
-  stabilize the yaw axis. There are 3 modes of operation:
-
-    - hold a specific heading with ground steering
-    - rate controlled with ground steering
-    - yaw control for coordinated flight    
+  stabilize the yaw axis using rudder
  */
 void Plane::stabilize_yaw()
 {
-    bool ground_steering = false;
-    if (landing.is_flaring()) {
-        // in flaring then enable ground steering
-        ground_steering = true;
-    } else {
-        // otherwise use ground steering when no input control and we
-        // are below the GROUND_STEER_ALT
-        ground_steering = (channel_roll->get_control_in() == 0 && 
-                                            fabsf(relative_altitude) < g.ground_steer_alt);
-        if (!landing.is_ground_steering_allowed()) {
-            // don't use ground steering on landing approach
-            ground_steering = false;
-        }
-    }
-
-
-    /*
-      first calculate steering for a nose or tail
-      wheel. We use "course hold" mode for the rudder when either performing
-      a flare (when the wings are held level) or when in course hold in
-      FBWA mode (when we are below GROUND_STEER_ALT)
-     */
-    float steering_output = 0.0;
-    if (landing.is_flaring() ||
-        (steer_state.hold_course_cd != -1 && ground_steering)) {
-        steering_output = calc_nav_yaw_course();
-    } else if (ground_steering) {
-        steering_output = calc_nav_yaw_ground();
-    }
-
     /*
       now calculate rudder for the rudder
      */
     const float rudder_output = calc_nav_yaw_coordinated();
 
-    if (!ground_steering) {
-        // Not doing ground steering, output rudder on steering channel
-        SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, rudder_output);
-        SRV_Channels::set_output_scaled(SRV_Channel::k_steering, rudder_output);
-
-    } else if (!SRV_Channels::function_assigned(SRV_Channel::k_steering)) {
-        // Ground steering active but no steering output configured, output steering on rudder channel
-        SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, steering_output);
-        SRV_Channels::set_output_scaled(SRV_Channel::k_steering, steering_output);
-
-    } else {
-        // Ground steering with both steering and rudder channels
-        SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, rudder_output);
-        SRV_Channels::set_output_scaled(SRV_Channel::k_steering, steering_output);
-    }
+    SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, rudder_output);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_steering, rudder_output);
 
 }
 
@@ -439,11 +392,6 @@ void Plane::stabilize()
         rollController.reset_I();
         pitchController.reset_I();
         yawController.reset_I();
-
-        // if moving very slowly also zero the steering integrator
-        if (ahrs.groundspeed() < 1) {
-            steerController.reset_I();            
-        }
     }
 }
 
@@ -503,72 +451,6 @@ int16_t Plane::calc_nav_yaw_coordinated()
     }
 
     return constrain_int16(commanded_rudder, -4500, 4500);
-}
-
-/*
-  calculate yaw control for ground steering with specific course
- */
-int16_t Plane::calc_nav_yaw_course(void)
-{
-    // holding a specific navigation course on the ground. Used in
-    // auto-takeoff and landing
-    int32_t bearing_error_cd = nav_controller->bearing_error_cd();
-    int16_t steering = steerController.get_steering_out_angle_error(bearing_error_cd);
-    if (stick_mixing_enabled()) {
-        steering = channel_rudder->stick_mixing(steering);
-    }
-    return constrain_int16(steering, -4500, 4500);
-}
-
-/*
-  calculate yaw control for ground steering
- */
-int16_t Plane::calc_nav_yaw_ground(void)
-{
-    if (gps.ground_speed() < 1 && 
-        is_zero(get_throttle_input()) &&
-        flight_stage != AP_FixedWing::FlightStage::TAKEOFF &&
-        flight_stage != AP_FixedWing::FlightStage::ABORT_LANDING) {
-        // manual rudder control while still
-        steer_state.locked_course = false;
-        steer_state.locked_course_err = 0;
-        return rudder_input();
-    }
-
-    // if we haven't been steering for 1s then clear locked course
-    const uint32_t now_ms = AP_HAL::millis();
-    if (now_ms - steer_state.last_steer_ms > 1000) {
-        steer_state.locked_course = false;
-    }
-    steer_state.last_steer_ms = now_ms;
-
-    float steer_rate = (rudder_input()/4500.0f) * g.ground_steer_dps;
-    if (flight_stage == AP_FixedWing::FlightStage::TAKEOFF ||
-        flight_stage == AP_FixedWing::FlightStage::ABORT_LANDING) {
-        steer_rate = 0;
-    }
-    if (!is_zero(steer_rate)) {
-        // pilot is giving rudder input
-        steer_state.locked_course = false;        
-    } else if (!steer_state.locked_course) {
-        // pilot has released the rudder stick or we are still - lock the course
-        steer_state.locked_course = true;
-        if (flight_stage != AP_FixedWing::FlightStage::TAKEOFF &&
-            flight_stage != AP_FixedWing::FlightStage::ABORT_LANDING) {
-            steer_state.locked_course_err = 0;
-        }
-    }
-
-    int16_t steering;
-    if (!steer_state.locked_course) {
-        // use a rate controller at the pilot specified rate
-        steering = steerController.get_steering_out_rate(steer_rate);
-    } else {
-        // use a error controller on the summed error
-        int32_t yaw_error_cd = -ToDeg(steer_state.locked_course_err)*100;
-        steering = steerController.get_steering_out_angle_error(yaw_error_cd);
-    }
-    return constrain_int16(steering, -4500, 4500);
 }
 
 

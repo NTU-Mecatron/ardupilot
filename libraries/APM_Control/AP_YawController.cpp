@@ -77,7 +77,7 @@ const AP_Param::GroupInfo AP_YawController::var_info[] = {
     // @Description: Enable yaw rate controller for aerobatic flight
     // @Values: 0:Disable,1:Enable
     // @User: Advanced
-    AP_GROUPINFO_FLAGS("_RATE_ENABLE",  6, AP_YawController, _rate_enable, 0, AP_PARAM_FLAG_ENABLE),
+    AP_GROUPINFO_FLAGS("_RATE_ENABLE",  6, AP_YawController, _rate_enable, 1, AP_PARAM_FLAG_ENABLE),
 
     // @Param: _RATE_P
     // @DisplayName: Yaw axis rate controller P gain

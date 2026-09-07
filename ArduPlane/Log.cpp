@@ -50,10 +50,6 @@ void Plane::Log_Write_Attitude(void)
         logger.Write_PID(LOG_PIDY_MSG, yawController.get_pid_info());
     }
 
-    if (steerController.active()) {
-        logger.Write_PID(LOG_PIDS_MSG, steerController.get_pid_info());
-    }
-
     AP::ahrs().Log_Write();
 }
 
