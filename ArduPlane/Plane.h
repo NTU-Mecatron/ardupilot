@@ -223,7 +223,6 @@ private:
     AP_RollController rollController{aparm};
     AP_PitchController pitchController{aparm};
     AP_YawController yawController{aparm};
-    AP_SteerController steerController{};
     AP_SpeedController speedController{ahrs};
 
     // Training mode

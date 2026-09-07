@@ -320,64 +320,17 @@ void Plane::stabilize_stick_mixing_fbw()
 
 
 /*
-  stabilize the yaw axis. There are 3 modes of operation:
-
-    - hold a specific heading with ground steering
-    - rate controlled with ground steering
-    - yaw control for coordinated flight    
+  stabilize the yaw axis using rudder
  */
 void Plane::stabilize_yaw()
 {
-    bool ground_steering = false;
-    if (landing.is_flaring()) {
-        // in flaring then enable ground steering
-        ground_steering = true;
-    } else {
-        // otherwise use ground steering when no input control and we
-        // are below the GROUND_STEER_ALT
-        ground_steering = (channel_roll->get_control_in() == 0 && 
-                                            fabsf(relative_altitude) < g.ground_steer_alt);
-        if (!landing.is_ground_steering_allowed()) {
-            // don't use ground steering on landing approach
-            ground_steering = false;
-        }
-    }
-
-
-    /*
-      first calculate steering for a nose or tail
-      wheel. We use "course hold" mode for the rudder when either performing
-      a flare (when the wings are held level) or when in course hold in
-      FBWA mode (when we are below GROUND_STEER_ALT)
-     */
-    float steering_output = 0.0;
-    if (landing.is_flaring() ||
-        (steer_state.hold_course_cd != -1 && ground_steering)) {
-        steering_output = calc_nav_yaw_course();
-    } else if (ground_steering) {
-        steering_output = calc_nav_yaw_ground();
-    }
-
     /*
       now calculate rudder for the rudder
      */
     const float rudder_output = calc_nav_yaw_coordinated();
 
-    if (!ground_steering) {
-        // Not doing ground steering, output rudder on steering channel
-        SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, rudder_output);
-        SRV_Channels::set_output_scaled(SRV_Channel::k_steering, rudder_output);
-
-    } else if (!SRV_Channels::function_assigned(SRV_Channel::k_steering)) {
-        // Ground steering active but no steering output configured, output steering on rudder channel
-        SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, steering_output);
-        SRV_Channels::set_output_scaled(SRV_Channel::k_steering, steering_output);
-
-    } else {
-        // Ground steering with both steering and rudder channels
-        SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, rudder_output);
-        SRV_Channels::set_output_scaled(SRV_Channel::k_steering, steering_output);
-    }
+    SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, rudder_output);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_steering, rudder_output);
 
 }
 
@@ -439,11 +392,6 @@ void Plane::stabilize()
         rollController.reset_I();
         pitchController.reset_I();
         yawController.reset_I();
-
-        // if moving very slowly also zero the steering integrator
-        if (ahrs.groundspeed() < 1) {
-            steerController.reset_I();            
-        }
     }
 }
 
