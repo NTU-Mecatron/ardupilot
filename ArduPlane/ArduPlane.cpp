@@ -226,8 +226,8 @@ void Plane::update_controllers_50Hz(void)
         alt_pitch_controller.update(target_alt_cm, speed_scaler);
     }
 
-    // Update current speed and then compute required throttle
-    update_speed();
+    // Update current velocity and then compute required throttle
+    update_velocity();
     speedController.update(target_speed_ms, get_forward_speed());
 
 #if HAL_QUADPLANE_ENABLED
@@ -913,7 +913,7 @@ void Plane::update_current_loc(void)
 /*
   update velocity_body, returns true if successful.
  */
-bool Plane::update_speed(void)
+bool Plane::update_velocity(void)
 {
     Vector3f vel_ned;
     if (!(ahrs.have_inertial_nav() && ahrs.get_velocity_NED(vel_ned)))
