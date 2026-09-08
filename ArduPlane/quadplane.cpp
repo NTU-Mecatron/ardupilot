@@ -2470,7 +2470,7 @@ void QuadPlane::vtol_position_controller(void)
         SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, plane.speedController.get_throttle_demand());
 
         // get pitch
-        int32_t commanded_pitch = plane.alt_pitch_controller.get_pitch_demand();
+        int32_t commanded_pitch = plane.alt_controller.get_pitch_demand();
         plane.nav_pitch_cd = constrain_int32(commanded_pitch, plane.pitch_limit_min*100, plane.aparm.pitch_limit_max.get()*100);
         if (poscontrol.get_state() == QPOS_AIRBRAKE) {
             // don't allow down pitch in airbrake

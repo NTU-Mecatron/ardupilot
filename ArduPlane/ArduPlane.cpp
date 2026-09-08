@@ -217,13 +217,13 @@ void Plane::update_controllers_50Hz(void)
 {
     bool should_run_alt_pitch_controller = true;
 #if HAL_QUADPLANE_ENABLED
-    if (quadplane.should_disable_alt_pitch_controller())    // TODO: change this to should disable alt_pitch controller
+    if (quadplane.should_disable_alt_pitch_controller())
         should_run_alt_pitch_controller = false;
 #endif
 
     if (should_run_alt_pitch_controller) {
         const float speed_scaler = get_speed_scaler();
-        alt_pitch_controller.update(target_alt_cm, speed_scaler);
+        alt_controller.update(plane.altitude_error_cm, speed_scaler);
     }
 
     // Update current velocity and then compute required throttle
@@ -483,7 +483,7 @@ void Plane::update_GPS_10Hz(void)
 }
 
 /*
-  main control mode dependent update code
+  call control_mode->update() to get desired yaw rate, roll and pitch from controllers; also get and apply throttle commands
  */
 void Plane::update_control_mode(void)
 {
@@ -559,30 +559,6 @@ void Plane::update_alt()
         return;
     }
 #endif
-
-    bool should_run_alt_pitch_controller = true;
-#if HAL_QUADPLANE_ENABLED
-    if (quadplane.should_disable_alt_pitch_controller()) {  // TODO: Change to pitch_alt syntax
-        should_run_alt_pitch_controller = false;
-    }
-#endif
-    
-    if (should_run_alt_pitch_controller) {
-
-        // float distance_beyond_land_wp = 0;
-        // if (flight_stage == AP_FixedWing::FlightStage::LAND &&
-        //     current_loc.past_interval_finish_line(prev_WP_loc, next_WP_loc)) {
-        //     distance_beyond_land_wp = current_loc.get_distance(next_WP_loc);
-        // }
-
-        // Luc_TOTO: remove this, target_alt_cm should be set in control_mode->navigate()
-        // target_alt_cm = relative_target_altitude_cm();
-
-        if (control_mode == &mode_rtl && !rtl.done_climb && (g2.rtl_climb_min > 0 || (plane.flight_option_enabled(FlightOptions::CLIMB_BEFORE_TURN)))) {
-            // TODO: an equivalent for torp?
-            // target_alt_cm = MAX(target_alt_cm, prev_WP_loc.alt - home.alt) + (g2.rtl_climb_min+10)*100;
-        }
-    }
 }
 
 /*

@@ -896,7 +896,7 @@ const AP_Param::Info Plane::var_info[] = {
 
     // @Group: ALT_
     // @Path: ../libraries/APM_Control/AP_AltitudeController.cpp
-    GOBJECT(alt_pitch_controller,  "ALT_",   AP_AltitudeController),
+    GOBJECT(alt_controller,  "ALT_",   AP_AltitudeController),
 
     // @Group: SPD_
     // @Path: ../libraries/APM_Control/AP_SpeedController.cpp

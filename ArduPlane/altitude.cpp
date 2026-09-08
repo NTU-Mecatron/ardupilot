@@ -21,7 +21,8 @@
  */
 
 /*
-  adjust altitude target depending on mode
+  set the target altitude based on the next waypoint and update the altitude error
+  should be called at least 10hz to ensure altitude controller works correctly
  */
 void Plane::adjust_altitude_target()
 {
@@ -43,7 +44,7 @@ void Plane::check_home_alt_change(void)
              */
             next_WP_loc.alt += alt_change_cm;
         }
-        alt_pitch_controller.reset_I();
+        alt_controller.reset_I();
     }
     auto_state.last_home_alt_cm = home_alt_cm;
 }

@@ -80,9 +80,9 @@ void Plane::loiter_angle_update(void)
     }
 }
 
-//****************************************************************
-// Function that will calculate the desired direction to fly and distance
-//****************************************************************
+/*
+  call control_mode->navigate() which sets high-level waypoints and speed (altitude is also set from these waypoints)
+ */
 void Plane::navigate()
 {
     // do not navigate with corrupt data

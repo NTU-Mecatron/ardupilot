@@ -721,7 +721,7 @@ void Plane::force_flare(void)
 #endif
 }
 
-/* Set the flight control servos based on the current calculated values
+/* Set the actual flight control servos based on calculated rudder, aileron and elevator outputs
 
   This function operates by first building up output values for
   channels using set_servo() and set_radio_out(). Using
