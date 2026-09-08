@@ -112,7 +112,8 @@ void ModeAcro::stabilize()
         rudder_output = plane.yawController.get_rate_out(yaw_rate,  speed_scaler, false);
     } else if (plane.flight_option_enabled(FlightOptions::ACRO_YAW_DAMPER)) {
         // use yaw controller
-        rudder_output = plane.calc_nav_yaw_coordinated();
+        // rudder_output = plane.calc_nav_yaw_coordinated();
+        rudder_output = 0;
     } else {
         /*
           manual rudder

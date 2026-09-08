@@ -904,7 +904,6 @@ private:
     void stabilize_pitch();
     void stabilize_stick_mixing_fbw();
     void stabilize_yaw();
-    int16_t calc_nav_yaw_coordinated();
 
     // Log.cpp
     uint32_t last_log_fast_ms;

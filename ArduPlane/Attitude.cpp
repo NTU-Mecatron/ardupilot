@@ -134,14 +134,12 @@ void Plane::stabilize_stick_mixing_fbw()
     }
     nav_pitch_cd = constrain_int32(nav_pitch_cd, pitch_limit_min*100, aparm.pitch_limit_max.get()*100);
 
-    float yaw_rate_input = channel_rudder->norm_input_dz();
-    if (yaw_rate_input > 0.5f) {
-        yaw_rate_input = (3*yaw_rate_input - 1);
-    } else if (yaw_rate_input < -0.5f) {
-        yaw_rate_input = (3*yaw_rate_input + 1);
-    }
+    // rudder stick will control yaw rate, not yaw angle
+    // hence, we use expo method to calculate the yaw rate input
     const int16_t max_yaw_rate = yawController.max_rate().get();
-    nav_yaw_rate += yaw_rate_input * max_yaw_rate;
+    const float rudd_expo = rudder_in_expo(true);
+    const float yaw_rate_input = (rudd_expo/SERVO_MAX) * max_yaw_rate;
+    nav_yaw_rate += yaw_rate_input;
     nav_yaw_rate = constrain_float(nav_yaw_rate, -max_yaw_rate, max_yaw_rate);
 }
 
@@ -151,14 +149,12 @@ void Plane::stabilize_stick_mixing_fbw()
  */
 void Plane::stabilize_yaw()
 {
-    /*
-      now calculate rudder for the rudder
-     */
-    const float rudder_output = calc_nav_yaw_coordinated();
-
-    SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, rudder_output);
-    SRV_Channels::set_output_scaled(SRV_Channel::k_steering, rudder_output);
-
+    bool disable_integrator = false;
+    if (control_mode == &mode_stabilize && rudder_input() != 0) {
+        disable_integrator = true;
+    }
+    const float rudder_out = yawController.get_rate_out(nav_yaw_rate, get_speed_scaler(), disable_integrator);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, rudder_out);
 }
 
 /*
@@ -232,39 +228,6 @@ void Plane::calc_throttle()
 /*****************************************
 * Calculate desired roll/pitch/yaw angles (in medium freq loop)
 *****************************************/
-
-/*
-  calculate yaw control, independent of roll, using rudder only
- */
-int16_t Plane::calc_nav_yaw_coordinated()
-{
-    const float speed_scaler = get_speed_scaler();
-    bool disable_integrator = false;
-    int16_t rudder_in = rudder_input();
-
-    int16_t commanded_rudder;
-
-    // Received an external msg that guides yaw in the last 3 seconds?
-    if (control_mode->is_guided_mode() &&
-            plane.guided_state.last_forced_rpy_ms.z > 0 &&
-            millis() - plane.guided_state.last_forced_rpy_ms.z < 3000) {
-        commanded_rudder = plane.guided_state.forced_rpy_cd.z;
-        yawController.reset_rate_PID();
-    } else {
-        if (control_mode == &mode_stabilize && rudder_in != 0) {
-            disable_integrator = true;
-        }
-
-        // rudder stick commands a yaw rate directly; no roll/airspeed coordination for an AUV
-        const float rudd_expo = rudder_in_expo(true);
-        const float yaw_rate = (rudd_expo/SERVO_MAX) * g.acro_yaw_rate;
-        commanded_rudder = yawController.get_rate_out(yaw_rate, speed_scaler, disable_integrator);
-    }
-
-
-    return constrain_int16(commanded_rudder, -4500, 4500);
-}
-
 
 /*
   get a new nav_pitch_cd from the alt-pitch controller
