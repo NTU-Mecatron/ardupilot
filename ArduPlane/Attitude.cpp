@@ -53,51 +53,11 @@ bool Plane::stick_mixing_enabled(void)
  */
 void Plane::stabilize_roll()
 {
-    if (fly_inverted()) {
-        // we want to fly upside down. We need to cope with wrap of
-        // the roll_sensor interfering with wrap of nav_roll, which
-        // would really confuse the PID code. The easiest way to
-        // handle this is to ensure both go in the same direction from
-        // zero
-        nav_roll_cd += 18000;
-        if (ahrs.roll_sensor < 0) nav_roll_cd -= 36000;
-    }
-
-    const float roll_out = stabilize_roll_get_roll_out();
-    SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, roll_out);
-}
-
-float Plane::stabilize_roll_get_roll_out()
-{
-    const float speed_scaler = get_speed_scaler();
 #if HAL_QUADPLANE_ENABLED
-    if (!quadplane.use_fw_attitude_controllers()) {
-        // use the VTOL rate for control, to ensure consistency
-        const auto &pid_info = quadplane.attitude_control->get_rate_roll_pid().get_pid_info();
-
-        // scale FF to angle P
-        if (quadplane.option_is_set(QuadPlane::OPTION::SCALE_FF_ANGLE_P)) {
-            const float mc_angR = quadplane.attitude_control->get_angle_roll_p().kP()
-                * quadplane.attitude_control->get_last_angle_P_scale().x;
-            if (is_positive(mc_angR)) {
-                rollController.set_ff_scale(MIN(1.0, 1.0 / (mc_angR * rollController.tau())));
-            }
-        }
-
-        const float roll_out = rollController.get_rate_out(degrees(pid_info.target), speed_scaler);
-        /* when slaving fixed wing control to VTOL control we need to decay the integrator to prevent
-           opposing integrators balancing between the two controllers
-        */
-        rollController.decay_I();
-        return roll_out;
-    }
+    // Luc_TODO
 #endif
-
-    bool disable_integrator = false;
-    if (control_mode == &mode_stabilize && channel_roll->get_control_in() != 0) {
-        disable_integrator = true;
-    }
-    return rollController.get_servo_out(nav_roll_cd - ahrs.roll_sensor, speed_scaler, disable_integrator);
+    const float roll_out = rollController.get_servo_out(nav_roll_cd - ahrs.roll_sensor, get_speed_scaler(), false);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, roll_out);
 }
 
 /*
@@ -107,92 +67,12 @@ float Plane::stabilize_roll_get_roll_out()
  */
 void Plane::stabilize_pitch()
 {
-    int8_t force_elevator = takeoff_tail_hold();
-    if (force_elevator != 0) {
-        // we are holding the tail down during takeoff. Just convert
-        // from a percentage to a -4500..4500 centidegree angle
-        SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, 45*force_elevator);
-        return;
-    }
-
-    const float pitch_out = stabilize_pitch_get_pitch_out();
+#if HAL_QUADPLANE_ENABLED
+    // Luc_TODO
+#endif
+    const int32_t demanded_pitch = nav_pitch_cd + int32_t(g.pitch_trim * 100.0);
+    const float pitch_out = pitchController.get_servo_out(demanded_pitch - ahrs.pitch_sensor, get_speed_scaler(), false);
     SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, pitch_out);
-}
-
-float Plane::stabilize_pitch_get_pitch_out()
-{
-    const float speed_scaler = get_speed_scaler();
-#if HAL_QUADPLANE_ENABLED
-    if (!quadplane.use_fw_attitude_controllers()) {
-        // use the VTOL rate for control, to ensure consistency
-        const auto &pid_info = quadplane.attitude_control->get_rate_pitch_pid().get_pid_info();
-
-        // scale FF to angle P
-        if (quadplane.option_is_set(QuadPlane::OPTION::SCALE_FF_ANGLE_P)) {
-            const float mc_angP = quadplane.attitude_control->get_angle_pitch_p().kP()
-                * quadplane.attitude_control->get_last_angle_P_scale().y;
-            if (is_positive(mc_angP)) {
-                pitchController.set_ff_scale(MIN(1.0, 1.0 / (mc_angP * pitchController.tau())));
-            }
-        }
-
-        const int32_t pitch_out = pitchController.get_rate_out(degrees(pid_info.target), speed_scaler);
-        /* when slaving fixed wing control to VTOL control we need to decay the integrator to prevent
-           opposing integrators balancing between the two controllers
-        */
-        pitchController.decay_I();
-        return pitch_out;
-    }
-#endif
-    // if LANDING_FLARE RCx_OPTION switch is set and in FW mode, manual throttle,throttle idle then set pitch to LAND_PITCH_DEG if flight option FORCE_FLARE_ATTITUDE is set
-#if HAL_QUADPLANE_ENABLED
-    const bool quadplane_in_transition = quadplane.in_transition();
-#else
-    const bool quadplane_in_transition = false;
-#endif
-
-    int32_t demanded_pitch = nav_pitch_cd + int32_t(g.pitch_trim * 100.0) + SRV_Channels::get_output_scaled(SRV_Channel::k_throttle) * g.kff_throttle_to_pitch;
-    bool disable_integrator = false;
-    if (control_mode == &mode_stabilize && channel_pitch->get_control_in() != 0) {
-        disable_integrator = true;
-    }
-    /* force landing pitch if:
-       - flare switch high
-       - throttle stick at zero thrust
-       - in fixed wing non auto-throttle mode
-    */
-    if (!quadplane_in_transition &&
-        !control_mode->is_vtol_mode() &&
-        !control_mode->does_auto_throttle() &&
-        flare_mode == FlareMode::ENABLED_PITCH_TARGET &&
-        throttle_at_zero()) {
-        demanded_pitch = landing.get_pitch_cd();
-    }
-
-    return pitchController.get_servo_out(demanded_pitch - ahrs.pitch_sensor, speed_scaler, disable_integrator);
-}
-
-/*
-  this gives the user control of the aircraft in stabilization modes, only used in Stabilize Mode
-  to be moved to mode_stabilize.cpp in future
- */
-void ModeStabilize::stabilize_stick_mixing_direct()
-{
-    if (!plane.stick_mixing_enabled()) {
-        return;
-    }
-#if HAL_QUADPLANE_ENABLED
-    if (!plane.quadplane.allow_stick_mixing()) {
-        return;
-    }
-#endif
-    float aileron = SRV_Channels::get_output_scaled(SRV_Channel::k_aileron);
-    aileron = plane.channel_roll->stick_mixing(aileron);
-    SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, aileron);
-
-    float elevator = SRV_Channels::get_output_scaled(SRV_Channel::k_elevator);
-    elevator = plane.channel_pitch->stick_mixing(elevator);
-    SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, elevator);
 }
 
 /*
@@ -247,15 +127,20 @@ void Plane::stabilize_stick_mixing_fbw()
     } else if (pitch_input < -0.5f) {
         pitch_input = (3*pitch_input + 1);
     }
-    if (fly_inverted()) {
-        pitch_input = -pitch_input;
-    }
     if (pitch_input > 0) {
         nav_pitch_cd += pitch_input * aparm.pitch_limit_max*100;
     } else {
         nav_pitch_cd += -(pitch_input * pitch_limit_min*100);
     }
     nav_pitch_cd = constrain_int32(nav_pitch_cd, pitch_limit_min*100, aparm.pitch_limit_max.get()*100);
+
+    // rudder stick will control yaw rate, not yaw angle
+    // hence, we use expo method to calculate the yaw rate input
+    const int16_t max_yaw_rate = yawController.max_rate().get();
+    const float rudd_expo = rudder_in_expo(true);
+    const float yaw_rate_input = (rudd_expo/SERVO_MAX) * max_yaw_rate;
+    nav_yaw_rate += yaw_rate_input;
+    nav_yaw_rate = constrain_float(nav_yaw_rate, -max_yaw_rate, max_yaw_rate);
 }
 
 
@@ -264,14 +149,12 @@ void Plane::stabilize_stick_mixing_fbw()
  */
 void Plane::stabilize_yaw()
 {
-    /*
-      now calculate rudder for the rudder
-     */
-    const float rudder_output = calc_nav_yaw_coordinated();
-
-    SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, rudder_output);
-    SRV_Channels::set_output_scaled(SRV_Channel::k_steering, rudder_output);
-
+    bool disable_integrator = false;
+    if (control_mode == &mode_stabilize && rudder_input() != 0) {
+        disable_integrator = true;
+    }
+    const float rudder_out = yawController.get_rate_out(nav_yaw_rate, get_speed_scaler(), disable_integrator);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, rudder_out);
 }
 
 /*
@@ -319,16 +202,8 @@ void Plane::stabilize()
         plane.control_mode->run();
     }
 
-    /*
-      see if we should zero the attitude controller integrators. 
-     */
-    if (is_zero(get_throttle_input()) &&
-        fabsf(relative_altitude) < 5.0f && 
-        fabsf(barometer.get_climb_rate()) < 0.5f &&
-        ahrs.groundspeed() < 3) {
-        // we are low, with no climb rate, and zero throttle, and very
-        // low ground speed. Zero the attitude controller
-        // integrators. This prevents integrator buildup pre-takeoff.
+    // Reset attitude controller integrators if vehicle is moving too slow, as there is very little control authority
+    if (fabsf(velocity_body.x) < aparm.airspeed_min) {
         rollController.reset_I();
         pitchController.reset_I();
         yawController.reset_I();
@@ -338,7 +213,7 @@ void Plane::stabilize()
 
 void Plane::calc_throttle()
 {
-    float commanded_throttle = speedController.get_throttle_demand();
+    const float commanded_throttle = speedController.get_throttle_demand();
     SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, commanded_throttle);
 }
 
@@ -347,56 +222,30 @@ void Plane::calc_throttle()
 *****************************************/
 
 /*
-  calculate yaw control, independent of roll, using rudder only
- */
-int16_t Plane::calc_nav_yaw_coordinated()
-{
-    const float speed_scaler = get_speed_scaler();
-    bool disable_integrator = false;
-    int16_t rudder_in = rudder_input();
-
-    int16_t commanded_rudder;
-
-    // Received an external msg that guides yaw in the last 3 seconds?
-    if (control_mode->is_guided_mode() &&
-            plane.guided_state.last_forced_rpy_ms.z > 0 &&
-            millis() - plane.guided_state.last_forced_rpy_ms.z < 3000) {
-        commanded_rudder = plane.guided_state.forced_rpy_cd.z;
-        yawController.reset_rate_PID();
-    } else {
-        if (control_mode == &mode_stabilize && rudder_in != 0) {
-            disable_integrator = true;
-        }
-
-        // rudder stick commands a yaw rate directly; no roll/airspeed coordination for an AUV
-        const float rudd_expo = rudder_in_expo(true);
-        const float yaw_rate = (rudd_expo/SERVO_MAX) * g.acro_yaw_rate;
-        commanded_rudder = yawController.get_rate_out(yaw_rate, speed_scaler, disable_integrator);
-    }
-
-
-    return constrain_int16(commanded_rudder, -4500, 4500);
-}
-
-
-/*
   get a new nav_pitch_cd from the alt-pitch controller
  */
 void Plane::calc_nav_pitch()
 {
-    int32_t commanded_pitch = alt_pitch_controller.get_pitch_demand();
-    nav_pitch_cd = constrain_int32(commanded_pitch, pitch_limit_min*100, aparm.pitch_limit_max.get()*100);
+    const int32_t commanded_pitch = alt_pitch_controller.get_pitch_demand();
+    nav_pitch_cd = constrain_int32(commanded_pitch, aparm.pitch_limit_min.get()*100, aparm.pitch_limit_max.get()*100);
 }
 
 
 /*
-  calculate a new nav_roll_cd from the navigation controller
+  for torp auv, we always want zero roll
  */
 void Plane::calc_nav_roll()
 {
-    int32_t commanded_roll = nav_controller->nav_roll_cd();
-    nav_roll_cd = constrain_int32(commanded_roll, -roll_limit_cd, roll_limit_cd);
-    update_load_factor();
+    nav_roll_cd = 0;
+}
+
+/*
+  calculate desired yaw rate from desired lateral acceleration
+ */
+void Plane::calc_nav_yaw_rate()
+{
+    const float lat_acc = nav_controller->lateral_acceleration();
+    nav_yaw_rate = degrees(lat_acc / MAX(velocity_body.x, aparm.airspeed_min));
 }
 
 /*
