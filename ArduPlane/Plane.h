@@ -642,9 +642,6 @@ private:
     // Desired forward speed in body frame (m/s)
     float target_speed_ms;
 
-    // Desired altitude (cm), up is positive
-    int32_t target_alt_cm;
-
     // the aerodynamic load factor. This is calculated from the demanded
     // roll before the roll is clipped, using 1/sqrt(cos(nav_roll))
     float aerodynamic_load_factor = 1.0f;

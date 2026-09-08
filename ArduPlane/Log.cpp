@@ -179,7 +179,7 @@ void Plane::Log_Write_Nav_Tuning()
         target_lat          : next_WP_loc.lat,
         target_lng          : next_WP_loc.lng,
         target_alt_wp       : next_WP_loc.alt,
-        target_alt          : target_alt_cm,
+        target_alt          : target_altitude.amsl_cm,
         target_airspeed     : target_airspeed_cm,
     };
     logger.WriteBlock(&pkt, sizeof(pkt));
