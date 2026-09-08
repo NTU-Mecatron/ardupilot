@@ -272,30 +272,30 @@ const AP_Param::Info Plane::var_info[] = {
     // @User: Standard
     ASCALAR(stall_prevention, "STALL_PREVENTION",  1),
 
-    // @Param: AIRSPEED_CRUISE
+    // @Param: SPEED_CRUISE
     // @DisplayName: Target cruise airspeed
-    // @Description: Target cruise airspeed in m/s in automatic throttle modes. Value is as an indicated (calibrated/apparent) airspeed.
+    // @Description: Target cruise airspeed in m/s in automatic throttle modes.
     // @Units: m/s
     // @User: Standard
-    ASCALAR(airspeed_cruise,     "AIRSPEED_CRUISE",  AIRSPEED_CRUISE),
+    ASCALAR(airspeed_cruise,     "SPEED_CRUISE",  1.5),
 
-    // @Param: AIRSPEED_MIN
-    // @DisplayName: Minimum Airspeed
-    // @Description: Minimum airspeed demanded in automatic throttle modes. Should be set to 20% higher than level flight stall speed.
+    // @Param: SPEED_MIN
+    // @DisplayName: Minimum Speed
+    // @Description: Minimum speed used for speed scaling calculation.
     // @Units: m/s
-    // @Range: 5 100
-    // @Increment: 1
+    // @Range: 0.5 4.0
+    // @Increment: 0.1
     // @User: Standard
-    ASCALAR(airspeed_min, "AIRSPEED_MIN",  AIRSPEED_FBW_MIN),
+    ASCALAR(airspeed_min, "SPEED_MIN",  0.5),
 
-    // @Param: AIRSPEED_MAX
-    // @DisplayName: Maximum Airspeed
-    // @Description: Maximum airspeed demanded in automatic throttle modes. Should be set slightly less than level flight speed at THR_MAX and also at least 50% above AIRSPEED_MIN to allow for accurate altitude control.
+    // @Param: SPEED_MAX
+    // @DisplayName: Maximum Speed
+    // @Description: Maximum speed used for speed scaling.
     // @Units: m/s
-    // @Range: 5 100
-    // @Increment: 1
+    // @Range: 1.0 20.0
+    // @Increment: 0.1
     // @User: Standard
-    ASCALAR(airspeed_max, "AIRSPEED_MAX",  AIRSPEED_FBW_MAX),
+    ASCALAR(airspeed_max, "SPEED_MAX",  10.0),
 
     // @Param: FBWB_ELEV_REV
     // @DisplayName: Fly By Wire elevator reverse

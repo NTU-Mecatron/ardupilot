@@ -11,8 +11,8 @@ struct AP_FixedWing {
     AP_Int8 throttle_slewrate;
     AP_Int8 throttle_cruise;
     AP_Int8 takeoff_throttle_max;
-    AP_Int16 airspeed_min;
-    AP_Int16 airspeed_max;
+    AP_Float airspeed_min;      // Old name, actually refer to min forward speed over ground used for speed scaling calculation
+    AP_Float airspeed_max;      // Old name, actually refer to max forward speed over ground used for speed scaling calculation
     AP_Float airspeed_cruise;
     AP_Float min_groundspeed;
     AP_Int8  crash_detection_enable;
