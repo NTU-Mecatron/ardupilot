@@ -43,7 +43,7 @@ void Plane::check_home_alt_change(void)
              */
             next_WP_loc.alt += alt_change_cm;
         }
-        alt_pitch_controller.reset_I();
+        alt_controller.reset_I();
     }
     auto_state.last_home_alt_cm = home_alt_cm;
 }

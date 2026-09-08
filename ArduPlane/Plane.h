@@ -219,8 +219,8 @@ private:
     AP_RPM rpm_sensor;
 #endif
 
-    AP_AltitudeController alt_pitch_controller{};
-    AP_L1_Control L1_controller{ahrs, nullptr};
+    AP_AltitudeController alt_controller{};         // Altitude controller, convert altitude error to pitch demand (speed-scaled)
+    AP_L1_Control L1_controller{ahrs, nullptr};     // Navigation controller, use waypoint to compute required lateral acceleration
 
     // Attitude to servo controllers
     AP_AttitudeController rollController{aparm, AP_AutoTune::AUTOTUNE_ROLL};

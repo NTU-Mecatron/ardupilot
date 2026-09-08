@@ -226,7 +226,7 @@ void Plane::calc_throttle()
  */
 void Plane::calc_nav_pitch()
 {
-    const int32_t commanded_pitch = alt_pitch_controller.get_pitch_demand();
+    const int32_t commanded_pitch = alt_controller.get_pitch_demand();
     nav_pitch_cd = constrain_int32(commanded_pitch, aparm.pitch_limit_min.get()*100, aparm.pitch_limit_max.get()*100);
 }
 

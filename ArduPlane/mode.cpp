@@ -240,7 +240,7 @@ void Mode::reset_controllers()
     plane.pitchController.reset_I();
     plane.yawController.reset_I();
     plane.speedController.reset_I();
-    plane.alt_pitch_controller.reset_I();
+    plane.alt_controller.reset_I();
 
     // reset steering controls
     plane.steer_state.locked_course = false;
