@@ -14,15 +14,15 @@
 class AP_AltitudeController {
 public:
     // Constructor
-    AP_AltitudeController(AP_AHRS &ahrs);
+    AP_AltitudeController();
 
     // Parameter definitions
     static const struct AP_Param::GroupInfo var_info[];
 
-    /// Update altitude controller
+    /// Update altitude controller with alt error in meters (positive means target is above current altitude)
+    /// Computed desired pitch is speed-scaled (faster speed requires less pitch)
     /// Must be called at minimum 50Hz
-    /// Internally retrieves altitude from AHRS and computes desired pitch
-    void update(float target_alt_cm, float speed_scaler);
+    void update(float alt_error_cm, float speed_scaler);
 
     /// Get desired pitch angle, to be used by the pitch controller
     /// @return  Desired pitch in centidegrees (positive = nose up)
@@ -35,9 +35,6 @@ public:
     const AP_PIDInfo& get_pid_info(void) const { return _pid_info; }
 
 private:
-    // AHRS reference for getting altitude and climb rate
-    AP_AHRS &_ahrs;
-
     // Default PI controller with IMAX, estimated with 1m error == 10 deg pitch, I_gain capped at 10 deg
     AC_PI _pid_alt{0.175f, 0.025f, 0.175f};
 

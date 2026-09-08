@@ -219,7 +219,7 @@ private:
     AP_RPM rpm_sensor;
 #endif
 
-    AP_AltitudeController alt_pitch_controller{ahrs};
+    AP_AltitudeController alt_pitch_controller{};
     AP_L1_Control L1_controller{ahrs, nullptr};
 
     // Attitude to servo controllers

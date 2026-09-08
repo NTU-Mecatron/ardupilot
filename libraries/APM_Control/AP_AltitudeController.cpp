@@ -39,8 +39,7 @@ const AP_Param::GroupInfo AP_AltitudeController::var_info[] = {
 };
 
 // Constructor
-AP_AltitudeController::AP_AltitudeController(AP_AHRS &ahrs) :
-    _ahrs(ahrs),
+AP_AltitudeController::AP_AltitudeController() :
     _desired_pitch_cd(0),
     _update_last_usec(0)
 {
@@ -49,7 +48,7 @@ AP_AltitudeController::AP_AltitudeController(AP_AHRS &ahrs) :
 }
 
 /// Update altitude controller
-void AP_AltitudeController::update(float target_alt_cm, float speed_scaler)
+void AP_AltitudeController::update(float alt_error_cm, float speed_scaler)
 {
     // Calculate time since last update
     uint32_t now = AP_HAL::micros();
@@ -61,17 +60,11 @@ void AP_AltitudeController::update(float target_alt_cm, float speed_scaler)
         dt = 0.02f;  // Assume 50Hz update rate
     }
 
-    // Get current height above home from AHRS in meters (positive = up)
-    // get_relative_position_D_home returns down distance from home, so negate it
-    float current_alt_m = 0;
-    _ahrs.get_relative_position_D_home(current_alt_m);
-    current_alt_m *= -1.0f;  // Convert from down to up
-
-    float target_alt_m = target_alt_cm * 0.01f;
+    float alt_error_m = alt_error_cm * 0.01f;
 
     // Update PI controller with altitude error (note that the arguments is measurement followed by target, different from AC_PID class)
     // PI input is altitude in meters, output is desired pitch in radians
-    float pitch_rad = _pid_alt.update(current_alt_m * speed_scaler, target_alt_m * speed_scaler, dt);
+    float pitch_rad = _pid_alt.update(-alt_error_m * speed_scaler, 0.0f, dt);
 
     // Actual feedforward pitch is dependent on speed; the higher speed, the lower pitch ff needed
     // speed_scaler = g.scaling_speed / current_speed, so we multiply by speed_scaler to adjust for current speed
