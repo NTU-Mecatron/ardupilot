@@ -127,15 +127,22 @@ void Plane::stabilize_stick_mixing_fbw()
     } else if (pitch_input < -0.5f) {
         pitch_input = (3*pitch_input + 1);
     }
-    if (fly_inverted()) {
-        pitch_input = -pitch_input;
-    }
     if (pitch_input > 0) {
         nav_pitch_cd += pitch_input * aparm.pitch_limit_max*100;
     } else {
         nav_pitch_cd += -(pitch_input * pitch_limit_min*100);
     }
     nav_pitch_cd = constrain_int32(nav_pitch_cd, pitch_limit_min*100, aparm.pitch_limit_max.get()*100);
+
+    float yaw_rate_input = channel_rudder->norm_input_dz();
+    if (yaw_rate_input > 0.5f) {
+        yaw_rate_input = (3*yaw_rate_input - 1);
+    } else if (yaw_rate_input < -0.5f) {
+        yaw_rate_input = (3*yaw_rate_input + 1);
+    }
+    const int16_t max_yaw_rate = yawController.max_rate().get();
+    nav_yaw_rate += yaw_rate_input * max_yaw_rate;
+    nav_yaw_rate = constrain_float(nav_yaw_rate, -max_yaw_rate, max_yaw_rate);
 }
 
 

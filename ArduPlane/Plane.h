@@ -630,16 +630,19 @@ private:
     bool ground_mode;
 
     // Navigation control variables
-    // The instantaneous desired bank angle.  Hundredths of a degree
+    // Desired roll angle (centidegrees)
     int32_t nav_roll_cd;
 
-    // The instantaneous desired pitch angle.  Hundredths of a degree
+    // Desired pitch angle (centidegrees)
     int32_t nav_pitch_cd;
+
+    // Desired yaw rate (deg/s)
+    float nav_yaw_rate;
     
-    // The instantaneous desired forward speed in body frame (m/s), can be negative for backwards
+    // Desired forward speed in body frame (m/s)
     float target_speed_ms;
 
-    // The recent desired altitude (cm), up is positive
+    // Desired altitude (cm), up is positive
     int32_t target_alt_cm;
 
     // the aerodynamic load factor. This is calculated from the demanded
