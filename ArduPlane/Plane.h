@@ -639,6 +639,9 @@ private:
     // The instantaneous desired forward speed in body frame (m/s), can be negative for backwards
     float nav_speed_ms;
 
+    // The recent desired altitude (cm), up is positive
+    int32_t target_alt_cm;
+
     // the aerodynamic load factor. This is calculated from the demanded
     // roll before the roll is clipped, using 1/sqrt(cos(nav_roll))
     float aerodynamic_load_factor = 1.0f;
@@ -1255,9 +1258,6 @@ private:
 
     // mode reason for entering previous mode
     ModeReason previous_mode_reason = ModeReason::UNKNOWN;
-
-    // last target alt
-    int32_t target_alt_cm;
 
 public:
     void failsafe_check(void);
