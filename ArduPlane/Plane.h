@@ -1040,6 +1040,7 @@ private:
     void update_compass(void);
     void update_alt(void);
     bool update_speed(void);
+    float get_forward_speed(void) const { return velocity_body.x; }
 #if AP_ADVANCEDFAILSAFE_ENABLED
     void afs_fs_check(void);
 #endif
