@@ -222,11 +222,11 @@ private:
     AP_AltitudeController alt_controller{};         // Altitude controller, convert altitude error to pitch demand (speed-scaled)
     AP_L1_Control L1_controller{ahrs, nullptr};     // Navigation controller, use waypoint to compute required lateral acceleration
 
-    // Attitude to servo controllers
-    AP_AttitudeController rollController{aparm, AP_AutoTune::AUTOTUNE_ROLL};
-    AP_AttitudeController pitchController{aparm, AP_AutoTune::AUTOTUNE_PITCH};
-    AP_AttitudeController yawController{aparm, AP_AutoTune::AUTOTUNE_YAW};
-    AP_SpeedController speedController{};
+    // Attitude to servo controllers (in centidegrees between -4500 and 4500)
+    AP_AttitudeController rollController{aparm, AP_AutoTune::AUTOTUNE_ROLL};    // Convert roll error or roll rate to aileron demand 
+    AP_AttitudeController pitchController{aparm, AP_AutoTune::AUTOTUNE_PITCH};  // Convert pitch error or pitch rate to elevator demand 
+    AP_AttitudeController yawController{aparm, AP_AutoTune::AUTOTUNE_YAW};      // Convert yaw rate (equal lat_acc/speed) to rudder demand 
+    AP_SpeedController speedController{};   // Convert speed error to throttle demand
 
     // Training mode
     bool training_manual_roll;  // user has manual roll control

@@ -217,7 +217,7 @@ void Plane::update_controllers_50Hz(void)
 {
     bool should_run_alt_pitch_controller = true;
 #if HAL_QUADPLANE_ENABLED
-    if (quadplane.should_disable_alt_pitch_controller())    // TODO: change this to should disable alt_pitch controller
+    if (quadplane.should_disable_alt_pitch_controller())
         should_run_alt_pitch_controller = false;
 #endif
 
@@ -483,7 +483,7 @@ void Plane::update_GPS_10Hz(void)
 }
 
 /*
-  main control mode dependent update code
+  call control_mode->update() to get desired yaw rate, roll and pitch from controllers; also get and apply throttle commands
  */
 void Plane::update_control_mode(void)
 {

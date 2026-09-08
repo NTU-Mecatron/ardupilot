@@ -158,7 +158,7 @@ void Plane::stabilize_yaw()
 }
 
 /*
-  main stabilization function for all 3 axes
+  call control_mode->run() to compute rudder, aileron and elevator servo outputs from desired yaw_rate, roll and pitch
  */
 void Plane::stabilize()
 {
