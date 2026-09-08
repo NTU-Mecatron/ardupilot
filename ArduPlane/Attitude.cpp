@@ -240,6 +240,15 @@ void Plane::calc_nav_roll()
 }
 
 /*
+  calculate desired yaw rate from desired lateral acceleration
+ */
+void Plane::calc_nav_yaw_rate()
+{
+    const float lat_acc = nav_controller->lateral_acceleration();
+    nav_yaw_rate = degrees(lat_acc / MAX(velocity_body.x, aparm.airspeed_min));
+}
+
+/*
   adjust nav_pitch_cd for STAB_PITCH_DOWN_CD. This is used to make
   keeping up good airspeed in FBWA mode easier, as the plane will
   automatically pitch down a little when at low throttle. It makes

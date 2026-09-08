@@ -899,6 +899,7 @@ private:
     void calc_throttle();
     void calc_nav_roll();
     void calc_nav_pitch();
+    void calc_nav_yaw_rate();
     bool stick_mixing_enabled(void);
     void stabilize_roll();
     void stabilize_pitch();
