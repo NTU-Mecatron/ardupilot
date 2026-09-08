@@ -637,7 +637,7 @@ private:
     int32_t nav_pitch_cd;
     
     // The instantaneous desired forward speed in body frame (m/s), can be negative for backwards
-    float nav_speed_ms;
+    float target_speed_ms;
 
     // The recent desired altitude (cm), up is positive
     int32_t target_alt_cm;

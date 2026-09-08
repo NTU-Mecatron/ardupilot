@@ -228,7 +228,7 @@ void Plane::update_controllers_50Hz(void)
 
     // Update current speed and then compute required throttle
     update_speed();
-    speedController.update(nav_speed_ms, velocity_body.x);
+    speedController.update(target_speed_ms, velocity_body.x);
 
 #if HAL_QUADPLANE_ENABLED
     if (quadplane.in_vtol_mode() ||
@@ -575,7 +575,8 @@ void Plane::update_alt()
         //     distance_beyond_land_wp = current_loc.get_distance(next_WP_loc);
         // }
 
-        target_alt_cm = relative_target_altitude_cm();
+        // Luc_TOTO: remove this, target_alt_cm should be set in control_mode->navigate()
+        // target_alt_cm = relative_target_altitude_cm();
 
         if (control_mode == &mode_rtl && !rtl.done_climb && (g2.rtl_climb_min > 0 || (plane.flight_option_enabled(FlightOptions::CLIMB_BEFORE_TURN)))) {
             // TODO: an equivalent for torp?
