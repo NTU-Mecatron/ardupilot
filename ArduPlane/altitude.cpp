@@ -21,7 +21,8 @@
  */
 
 /*
-  adjust altitude target depending on mode
+  set the target altitude based on the next waypoint and update the altitude error
+  should be called at least 10hz to ensure altitude controller works correctly
  */
 void Plane::adjust_altitude_target()
 {
