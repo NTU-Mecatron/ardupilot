@@ -772,6 +772,8 @@ public:
 
     void navigate() override;
 
+    void run() override;
+
     bool allows_throttle_nudging() const override { return true; }
 
     bool does_auto_navigation() const override { return true; }
@@ -781,16 +783,18 @@ public:
     // var_info for holding parameter information
     static const struct AP_Param::GroupInfo var_info[];
 
-    AP_Int16 target_alt;
-    AP_Int16 level_alt;
-    AP_Float ground_pitch;
-
 protected:
-    AP_Int16 target_dist;
-    AP_Int8 level_pitch;
+    AP_Float target_alt;
+    AP_Float takeoff_speed;
+    AP_Int8 surface_elevator;
+    AP_Int8 takeoff_in_circle;
 
-    bool takeoff_started;
-    Location start_loc;
+    int32_t initial_heading_cd = -1;
+    float current_speed = 0.0;
+    uint32_t takeoff_start_ms = 0;
+
+    bool has_logged_reached_takeoff_speed = false;
+    bool has_logged_reached_target_alt = false;
 
     bool _enter() override;
 };
