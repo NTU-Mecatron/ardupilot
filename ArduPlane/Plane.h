@@ -896,8 +896,6 @@ private:
     void calc_throttle();
     void calc_nav_roll();
     void calc_nav_pitch();
-    float calc_speed_scaler(void);
-    float get_speed_scaler(void) const { return surface_speed_scaler; }
     bool stick_mixing_enabled(void);
     void stabilize_roll();
     float stabilize_roll_get_roll_out();
@@ -1057,14 +1055,14 @@ private:
     void update_flight_stage();
     void set_flight_stage(AP_FixedWing::FlightStage fs);
     bool flight_option_enabled(FlightOptions flight_option) const;
+    void calc_speed_scaler(void);
+    float get_speed_scaler(void) const { return surface_speed_scaler; }
 
     // navigation.cpp
     void loiter_angle_reset(void);
     void loiter_angle_update(void);
     void navigate();
     void check_home_alt_change(void);
-    void calc_airspeed_errors();
-    float mode_auto_target_airspeed_cm();
     void calc_gndspeed_undershoot();
     void update_loiter(uint16_t radius);
     void update_loiter_update_nav(uint16_t radius);

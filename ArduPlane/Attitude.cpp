@@ -1,27 +1,6 @@
 #include "Plane.h"
 
 /*
-  calculate speed scaling number for control surfaces. This is applied
-  to PIDs to change the scaling of the PID with speed. At high speed
-  we move the surfaces less, and at low speeds we move them more.
- */
-float Plane::calc_speed_scaler(void)
-{
-#if HAL_QUADPLANE_ENABLED
-    // Luc_TODO
-#endif
-
-    float speed = velocity_body.x;
-    if (!arming.is_armed_and_safety_off() ||
-        fabsf(speed) < 0.1f) return 1.0f;
-
-    const float scale_min = MIN(0.5, g.scaling_speed / aparm.airspeed_max);
-    const float scale_max = MAX(2.0, g.scaling_speed / aparm.airspeed_min);
-    float speed_scaler = g.scaling_speed / speed;
-    return constrain_float(speed_scaler, scale_min, scale_max);
-}
-
-/*
   return true if the current settings and mode should allow for stick mixing
  */
 bool Plane::stick_mixing_enabled(void)
