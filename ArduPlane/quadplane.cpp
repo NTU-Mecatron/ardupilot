@@ -3040,7 +3040,7 @@ void QuadPlane::assign_tilt_to_fwd_thr(void) {
     float nav_pitch_upper_limit_cd = 100.0f * q_bck_pitch_lim;
     float aspeed;
     if (is_positive(q_bck_pitch_lim) && ahrs.airspeed_estimate(aspeed)) {
-        const float reference_speed = MAX(plane.aparm.airspeed_min, MIN_AIRSPEED_MIN);
+        const float reference_speed = MAX(plane.aparm.airspeed_min, MIN_SPEED);
         float speed_scaler = sq(reference_speed / MAX(aspeed, 0.1f));
         nav_pitch_upper_limit_cd *= speed_scaler;
         nav_pitch_upper_limit_cd = MIN(nav_pitch_upper_limit_cd, (float)aparm.angle_max);
