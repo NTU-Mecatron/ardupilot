@@ -228,7 +228,7 @@ void Plane::update_controllers_50Hz(void)
 
     // Update current velocity and then compute required throttle
     update_velocity();
-    speedController.update(target_speed_ms, get_forward_speed());
+    speedController.update(target_speed_ms - get_forward_speed());
 
 #if HAL_QUADPLANE_ENABLED
     if (quadplane.in_vtol_mode() ||
