@@ -61,7 +61,7 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     FAST_TASK(set_servos),
     SCHED_TASK(read_radio,             50,    100,   6),
     SCHED_TASK(check_short_failsafe,   50,    100,   9),
-    SCHED_TASK(update_alt_pitch_controller,    50,    200,  12),
+    SCHED_TASK(update_controllers_50Hz,    50,    200,  12),
     SCHED_TASK(update_throttle_hover, 100,     90,  24),
     SCHED_TASK_CLASS(RC_Channels,     (RC_Channels*)&plane.g2.rc_channels, read_mode_switch,           7,    100, 27),
     SCHED_TASK(update_GPS_50Hz,        50,    300,  30),
@@ -211,9 +211,9 @@ void Plane::ahrs_update()
 }
 
 /*
-  update 50Hz speed/height controller
+  update all controllers that need to be run at medium frequency
  */
-void Plane::update_alt_pitch_controller(void)
+void Plane::update_controllers_50Hz(void)
 {
     bool should_run_alt_pitch_controller = true;
 #if HAL_QUADPLANE_ENABLED
@@ -223,8 +223,12 @@ void Plane::update_alt_pitch_controller(void)
 
     if (should_run_alt_pitch_controller) {
         const float speed_scaler = get_speed_scaler();
-        alt_pitch_controller.update(speed_scaler);
+        alt_pitch_controller.update(target_alt_cm, speed_scaler);
     }
+
+    // Update current speed and then compute required throttle
+    update_speed();
+    speedController.update(target_speed_ms, velocity_body.x);
 
 #if HAL_QUADPLANE_ENABLED
     if (quadplane.in_vtol_mode() ||
@@ -571,14 +575,13 @@ void Plane::update_alt()
         //     distance_beyond_land_wp = current_loc.get_distance(next_WP_loc);
         // }
 
-        target_alt_cm = relative_target_altitude_cm();
+        // Luc_TOTO: remove this, target_alt_cm should be set in control_mode->navigate()
+        // target_alt_cm = relative_target_altitude_cm();
 
         if (control_mode == &mode_rtl && !rtl.done_climb && (g2.rtl_climb_min > 0 || (plane.flight_option_enabled(FlightOptions::CLIMB_BEFORE_TURN)))) {
             // TODO: an equivalent for torp?
             // target_alt_cm = MAX(target_alt_cm, prev_WP_loc.alt - home.alt) + (g2.rtl_climb_min+10)*100;
         }
-
-        alt_pitch_controller.set_target_altitude(target_alt_cm);
     }
 }
 
@@ -905,6 +908,18 @@ void Plane::update_current_loc(void)
     // re-calculate relative altitude
     ahrs.get_relative_position_D_home(plane.relative_altitude);
     relative_altitude *= -1.0f;
+}
+
+/*
+  update velocity_body, returns true if successful.
+ */
+bool Plane::update_speed(void)
+{
+    Vector3f vel_ned;
+    if (!(ahrs.have_inertial_nav() && ahrs.get_velocity_NED(vel_ned)))
+        return false;
+    velocity_body = ahrs.earth_to_body(vel_ned);
+    return true;
 }
 
 // check if FLIGHT_OPTION is enabled

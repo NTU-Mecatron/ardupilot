@@ -226,7 +226,7 @@ private:
     AP_AttitudeController rollController{aparm, AP_AutoTune::AUTOTUNE_ROLL};
     AP_AttitudeController pitchController{aparm, AP_AutoTune::AUTOTUNE_PITCH};
     AP_AttitudeController yawController{aparm, AP_AutoTune::AUTOTUNE_YAW};
-    AP_SpeedController speedController{ahrs};
+    AP_SpeedController speedController{};
 
     // Training mode
     bool training_manual_roll;  // user has manual roll control
@@ -409,6 +409,9 @@ private:
 
     // Difference between current altitude and desired altitude.  Centimeters
     int32_t altitude_error_cm;
+
+    // Current velocity in body frame (m/s)
+    Vector3f velocity_body;
 
     // speed scaler for control surfaces, updated at 10Hz
     float surface_speed_scaler = 1.0;
@@ -632,6 +635,12 @@ private:
 
     // The instantaneous desired pitch angle.  Hundredths of a degree
     int32_t nav_pitch_cd;
+    
+    // The instantaneous desired forward speed in body frame (m/s), can be negative for backwards
+    float target_speed_ms;
+
+    // The recent desired altitude (cm), up is positive
+    int32_t target_alt_cm;
 
     // the aerodynamic load factor. This is calculated from the demanded
     // roll before the roll is clipped, using 1/sqrt(cos(nav_roll))
@@ -1026,11 +1035,12 @@ private:
                              uint8_t &task_count,
                              uint32_t &log_bit) override;
     void ahrs_update();
-    void update_alt_pitch_controller(void);
+    void update_controllers_50Hz(void);
     void update_GPS_50Hz(void);
     void update_GPS_10Hz(void);
     void update_compass(void);
     void update_alt(void);
+    bool update_speed(void);
 #if AP_ADVANCEDFAILSAFE_ENABLED
     void afs_fs_check(void);
 #endif
@@ -1248,9 +1258,6 @@ private:
 
     // mode reason for entering previous mode
     ModeReason previous_mode_reason = ModeReason::UNKNOWN;
-
-    // last target alt
-    int32_t target_alt_cm;
 
 public:
     void failsafe_check(void);

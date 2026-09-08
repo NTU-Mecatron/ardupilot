@@ -19,16 +19,10 @@ public:
     // Parameter definitions
     static const struct AP_Param::GroupInfo var_info[];
 
-    /// Target altitude in centimeters (positive = up)
-    void set_target_altitude(int32_t target_alt_cm) {_target_alt_cm = target_alt_cm; }
-
-    /// Get latest target altitude in centimeters (positive = up)
-    int32_t get_target_altitude() const { return _target_alt_cm; }
-
     /// Update altitude controller
     /// Must be called at minimum 50Hz
     /// Internally retrieves altitude from AHRS and computes desired pitch
-    void update(float speed_scaler);
+    void update(float target_alt_cm, float speed_scaler);
 
     /// Get desired pitch angle, to be used by the pitch controller
     /// @return  Desired pitch in centidegrees (positive = nose up)
@@ -52,7 +46,6 @@ private:
     AP_Float _pitch_max;               // Maximum pitch angle (degrees)
 
     // State variables
-    int32_t _target_alt_cm;             // Target altitude in cm
     int32_t _desired_pitch_cd;          // Desired pitch angle in centidegrees
     uint64_t _update_last_usec;         // Time of last update in microseconds
 

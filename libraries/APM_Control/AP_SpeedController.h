@@ -13,24 +13,14 @@
 class AP_SpeedController {
 public:
     // Constructor
-    AP_SpeedController(AP_AHRS &ahrs);
+    AP_SpeedController();
 
     // Parameter definitions
     static const struct AP_Param::GroupInfo var_info[];
 
-    /// Set target speed in m/s
-    void set_target_speed(float target_speed_ms) { _target_speed_ms = target_speed_ms; }
-
-    /// Get latest target speed in m/s
-    float get_target_speed() const { return _target_speed_ms; }
-
-    // Get speed along body forward axis
-    bool get_forward_speed(float &speed) const;
-
-    /// Update speed controller
+    /// Update speed controller with the latest target and current speed (in m/s)
     /// Must be called at minimum 50Hz
-    /// Internally retrieves current speed from AHRS and computes desired throttle
-    void update();
+    void update(float target_speed, float current_speed);
 
     /// Get desired throttle pct, to be used by the motor controller
     /// @return  Desired throttle pct (-100 to 100)
@@ -43,14 +33,10 @@ public:
     const AP_PIDInfo& get_pid_info(void) const { return _pid_info; }
 
 private:
-    // AHRS reference for getting speed
-    AP_AHRS &_ahrs;
-
     // PI controller (w FF): speed error -> throttle
     AC_PID _pid_speed{0.2f, 0.02f, 0.0f, 0.2f, 0.2f, 0.0f, 0.0f, 0.0f};
 
     // State variables
-    float   _target_speed_ms;           // Target speed in m/s
     float   _desired_throttle;      // Desired throttle in percent
     uint64_t _update_last_usec;         // Time of last update in microseconds
 
