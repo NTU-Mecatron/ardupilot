@@ -202,16 +202,8 @@ void Plane::stabilize()
         plane.control_mode->run();
     }
 
-    /*
-      see if we should zero the attitude controller integrators. 
-     */
-    if (is_zero(get_throttle_input()) &&
-        fabsf(relative_altitude) < 5.0f && 
-        fabsf(barometer.get_climb_rate()) < 0.5f &&
-        ahrs.groundspeed() < 3) {
-        // we are low, with no climb rate, and zero throttle, and very
-        // low ground speed. Zero the attitude controller
-        // integrators. This prevents integrator buildup pre-takeoff.
+    // Reset attitude controller integrators if vehicle is moving too slow, as there is very little control authority
+    if (fabsf(velocity_body.x) < aparm.airspeed_min) {
         rollController.reset_I();
         pitchController.reset_I();
         yawController.reset_I();
