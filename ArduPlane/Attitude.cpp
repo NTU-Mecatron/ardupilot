@@ -203,7 +203,7 @@ void Plane::stabilize()
     }
 
     // Reset attitude controller integrators if vehicle is moving too slow, as there is very little control authority
-    if (fabsf(velocity_body.x) < aparm.airspeed_min) {
+    if (fabsf(get_forward_speed()) < aparm.airspeed_min) {
         rollController.reset_I();
         pitchController.reset_I();
         yawController.reset_I();
@@ -245,7 +245,7 @@ void Plane::calc_nav_roll()
 void Plane::calc_nav_yaw_rate()
 {
     const float lat_acc = nav_controller->lateral_acceleration();
-    nav_yaw_rate = degrees(lat_acc / MAX(velocity_body.x, aparm.airspeed_min));
+    nav_yaw_rate = degrees(lat_acc / MAX(get_forward_speed(), aparm.airspeed_min));
 }
 
 /*

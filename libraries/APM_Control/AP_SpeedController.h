@@ -18,9 +18,9 @@ public:
     // Parameter definitions
     static const struct AP_Param::GroupInfo var_info[];
 
-    /// Update speed controller with the latest target and current speed (in m/s)
+    /// Update speed controller with the latest speed error (in m/s) to compute the desired throttle
     /// Must be called at minimum 50Hz
-    void update(float target_speed, float current_speed);
+    void update(float speed_error);
 
     /// Get desired throttle pct, to be used by the motor controller
     /// @return  Desired throttle pct (-100 to 100)

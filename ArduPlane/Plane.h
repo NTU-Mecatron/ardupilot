@@ -1039,7 +1039,8 @@ private:
     void update_GPS_10Hz(void);
     void update_compass(void);
     void update_alt(void);
-    bool update_speed(void);
+    bool update_velocity(void);
+    float get_forward_speed(void) const { return velocity_body.x; }
 #if AP_ADVANCEDFAILSAFE_ENABLED
     void afs_fs_check(void);
 #endif

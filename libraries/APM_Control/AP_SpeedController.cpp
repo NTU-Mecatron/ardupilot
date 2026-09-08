@@ -44,7 +44,7 @@ AP_SpeedController::AP_SpeedController() :
 }
 
 /// Update speed controller
-void AP_SpeedController::update(float target_speed, float current_speed)
+void AP_SpeedController::update(float speed_error)
 {
         // Calculate time since last update
     uint32_t now = AP_HAL::micros();
@@ -59,7 +59,7 @@ void AP_SpeedController::update(float target_speed, float current_speed)
     // Update PID controller with speed error
     // PID input is speed in m/s, output is throttle (-1 to 1)
     bool limit_i_gain = fabsf(_desired_throttle) >= 0.95f;
-    _desired_throttle = _pid_speed.update_all(target_speed, current_speed, dt, limit_i_gain);
+    _desired_throttle = _pid_speed.update_error(speed_error, dt, limit_i_gain);
     _desired_throttle += _pid_speed.get_ff();
     _desired_throttle = constrain_float(_desired_throttle, -1.0f, 1.0f);
 
