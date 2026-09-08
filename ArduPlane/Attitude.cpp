@@ -1,64 +1,6 @@
 #include "Plane.h"
 
 /*
-  calculate speed scaling number for control surfaces. This is applied
-  to PIDs to change the scaling of the PID with speed. At high speed
-  we move the surfaces less, and at low speeds we move them more.
- */
-float Plane::calc_speed_scaler(void)
-{
-    // Luc_TODO: simplify to underwater logic
-    float aspeed, speed_scaler;
-    if (ahrs.airspeed_estimate(aspeed)) {
-        if (aspeed > auto_state.highest_airspeed && arming.is_armed_and_safety_off()) {
-            auto_state.highest_airspeed = aspeed;
-        }
-        // ensure we have scaling over the full configured airspeed
-        const float airspeed_min = MAX(aparm.airspeed_min, MIN_AIRSPEED_MIN);
-        const float scale_min = MIN(0.5, g.scaling_speed / (2.0 * aparm.airspeed_max));
-        const float scale_max = MAX(2.0, g.scaling_speed / (0.7 * airspeed_min));
-        if (aspeed > 0.0001f) {
-            speed_scaler = g.scaling_speed / aspeed;
-        } else {
-            speed_scaler = scale_max;
-        }
-        speed_scaler = constrain_float(speed_scaler, scale_min, scale_max);
-
-#if HAL_QUADPLANE_ENABLED
-        if (quadplane.in_vtol_mode() && arming.is_armed_and_safety_off()) {
-            // when in VTOL modes limit surface movement at low speed to prevent instability
-            float threshold = airspeed_min * 0.5;
-            if (aspeed < threshold) {
-                float new_scaler = linear_interpolate(0.001, g.scaling_speed / threshold, aspeed, 0, threshold);
-                speed_scaler = MIN(speed_scaler, new_scaler);
-
-                // we also decay the integrator to prevent an integrator from before
-                // we were at low speed persistent at high speed
-                rollController.decay_I();
-                pitchController.decay_I();
-                yawController.decay_I();
-            }
-        }
-#endif
-    } else if (arming.is_armed_and_safety_off()) {
-        // scale assumed surface movement using throttle output
-        float throttle_out = MAX(SRV_Channels::get_output_scaled(SRV_Channel::k_throttle), 1);
-        speed_scaler = sqrtf(THROTTLE_CRUISE / throttle_out);
-        // This case is constrained tighter as we don't have real speed info
-        speed_scaler = constrain_float(speed_scaler, 0.6f, 1.67f);
-    } else {
-        // no speed estimate and not armed, use a unit scaling
-        speed_scaler = 1;
-    }
-    if (!plane.ahrs.using_airspeed_sensor()  && 
-        (plane.flight_option_enabled(FlightOptions::SURPRESS_TKOFF_SCALING)) &&
-        (plane.flight_stage == AP_FixedWing::FlightStage::TAKEOFF)) { //scaling is suppressed during climb phase of automatic takeoffs with no airspeed sensor being used due to problems with inaccurate airspeed estimates
-        return MIN(speed_scaler, 1.0f) ;
-    }
-    return speed_scaler;
-}
-
-/*
   return true if the current settings and mode should allow for stick mixing
  */
 bool Plane::stick_mixing_enabled(void)

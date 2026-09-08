@@ -68,7 +68,7 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     SCHED_TASK(update_GPS_10Hz,        10,    400,  33),
     SCHED_TASK(navigate,               10,    150,  36),
     SCHED_TASK(update_compass,         10,    200,  39),
-    SCHED_TASK(calc_airspeed_errors,   10,    100,  42),
+    SCHED_TASK(calc_speed_scaler,      10,    100,  42),
     SCHED_TASK(update_alt,             10,    200,  45),
     SCHED_TASK(adjust_altitude_target, 10,    200,  48),
 #if AP_ADVANCEDFAILSAFE_ENABLED
@@ -920,6 +920,32 @@ bool Plane::update_speed(void)
         return false;
     velocity_body = ahrs.earth_to_body(vel_ned);
     return true;
+}
+
+/*
+  calculate speed scaling number for control surfaces. This is applied
+  to PIDs to change the scaling of the PID with speed. At high speed
+  we move the surfaces less, and at low speeds we move them more.
+ */
+void Plane::calc_speed_scaler(void)
+{
+#if HAL_QUADPLANE_ENABLED
+    // Luc_TODO
+#endif
+
+    float speed = velocity_body.x;
+    float speed_scaler = 1.0f;
+
+    if (arming.is_armed_and_safety_off() && fabsf(speed) >= 0.1f) {
+        const float scale_min = MIN(0.5, g.scaling_speed / aparm.airspeed_max);
+        const float scale_max = MAX(2.0, g.scaling_speed / aparm.airspeed_min);
+        speed_scaler = constrain_float(g.scaling_speed / speed, scale_min, scale_max);
+    }
+
+    // apply low-pass filter to smooth out rapid changes in speed_scaler
+    const float cutoff_Hz = 2.0;
+    const float dt = 0.1;
+    surface_speed_scaler += calc_lowpass_alpha_dt(dt, cutoff_Hz) * (speed_scaler - surface_speed_scaler);
 }
 
 // check if FLIGHT_OPTION is enabled
