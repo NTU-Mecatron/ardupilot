@@ -53,51 +53,11 @@ bool Plane::stick_mixing_enabled(void)
  */
 void Plane::stabilize_roll()
 {
-    if (fly_inverted()) {
-        // we want to fly upside down. We need to cope with wrap of
-        // the roll_sensor interfering with wrap of nav_roll, which
-        // would really confuse the PID code. The easiest way to
-        // handle this is to ensure both go in the same direction from
-        // zero
-        nav_roll_cd += 18000;
-        if (ahrs.roll_sensor < 0) nav_roll_cd -= 36000;
-    }
-
-    const float roll_out = stabilize_roll_get_roll_out();
-    SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, roll_out);
-}
-
-float Plane::stabilize_roll_get_roll_out()
-{
-    const float speed_scaler = get_speed_scaler();
 #if HAL_QUADPLANE_ENABLED
-    if (!quadplane.use_fw_attitude_controllers()) {
-        // use the VTOL rate for control, to ensure consistency
-        const auto &pid_info = quadplane.attitude_control->get_rate_roll_pid().get_pid_info();
-
-        // scale FF to angle P
-        if (quadplane.option_is_set(QuadPlane::OPTION::SCALE_FF_ANGLE_P)) {
-            const float mc_angR = quadplane.attitude_control->get_angle_roll_p().kP()
-                * quadplane.attitude_control->get_last_angle_P_scale().x;
-            if (is_positive(mc_angR)) {
-                rollController.set_ff_scale(MIN(1.0, 1.0 / (mc_angR * rollController.tau())));
-            }
-        }
-
-        const float roll_out = rollController.get_rate_out(degrees(pid_info.target), speed_scaler);
-        /* when slaving fixed wing control to VTOL control we need to decay the integrator to prevent
-           opposing integrators balancing between the two controllers
-        */
-        rollController.decay_I();
-        return roll_out;
-    }
+    // Luc_TODO
 #endif
-
-    bool disable_integrator = false;
-    if (control_mode == &mode_stabilize && channel_roll->get_control_in() != 0) {
-        disable_integrator = true;
-    }
-    return rollController.get_servo_out(nav_roll_cd - ahrs.roll_sensor, speed_scaler, disable_integrator);
+    const float roll_out = rollController.get_servo_out(nav_roll_cd - ahrs.roll_sensor, get_speed_scaler(), false);
+    SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, roll_out);
 }
 
 /*

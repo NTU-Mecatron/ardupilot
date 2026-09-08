@@ -898,7 +898,6 @@ private:
     void calc_nav_pitch();
     bool stick_mixing_enabled(void);
     void stabilize_roll();
-    float stabilize_roll_get_roll_out();
     void stabilize_pitch();
     float stabilize_pitch_get_pitch_out();
     void stabilize_stick_mixing_fbw();
