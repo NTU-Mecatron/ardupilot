@@ -61,7 +61,7 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     FAST_TASK(set_servos),
     SCHED_TASK(read_radio,             50,    100,   6),
     SCHED_TASK(check_short_failsafe,   50,    100,   9),
-    SCHED_TASK(update_alt_pitch_controller,    50,    200,  12),
+    SCHED_TASK(update_controllers_50Hz,    50,    200,  12),
     SCHED_TASK(update_throttle_hover, 100,     90,  24),
     SCHED_TASK_CLASS(RC_Channels,     (RC_Channels*)&plane.g2.rc_channels, read_mode_switch,           7,    100, 27),
     SCHED_TASK(update_GPS_50Hz,        50,    300,  30),
@@ -211,9 +211,9 @@ void Plane::ahrs_update()
 }
 
 /*
-  update 50Hz speed/height controller
+  update all controllers that need to be run at medium frequency
  */
-void Plane::update_alt_pitch_controller(void)
+void Plane::update_controllers_50Hz(void)
 {
     bool should_run_alt_pitch_controller = true;
 #if HAL_QUADPLANE_ENABLED

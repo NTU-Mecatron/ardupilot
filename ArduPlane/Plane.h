@@ -1032,7 +1032,7 @@ private:
                              uint8_t &task_count,
                              uint32_t &log_bit) override;
     void ahrs_update();
-    void update_alt_pitch_controller(void);
+    void update_controllers_50Hz(void);
     void update_GPS_50Hz(void);
     void update_GPS_10Hz(void);
     void update_compass(void);
