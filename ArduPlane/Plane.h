@@ -226,7 +226,7 @@ private:
     AP_AttitudeController rollController{aparm, AP_AutoTune::AUTOTUNE_ROLL};
     AP_AttitudeController pitchController{aparm, AP_AutoTune::AUTOTUNE_PITCH};
     AP_AttitudeController yawController{aparm, AP_AutoTune::AUTOTUNE_YAW};
-    AP_SpeedController speedController{ahrs};
+    AP_SpeedController speedController{};
 
     // Training mode
     bool training_manual_roll;  // user has manual roll control
