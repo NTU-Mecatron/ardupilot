@@ -213,7 +213,7 @@ void Plane::stabilize()
 
 void Plane::calc_throttle()
 {
-    float commanded_throttle = speedController.get_throttle_demand();
+    const float commanded_throttle = speedController.get_throttle_demand();
     SRV_Channels::set_output_scaled(SRV_Channel::k_throttle, commanded_throttle);
 }
 
@@ -226,19 +226,17 @@ void Plane::calc_throttle()
  */
 void Plane::calc_nav_pitch()
 {
-    int32_t commanded_pitch = alt_pitch_controller.get_pitch_demand();
-    nav_pitch_cd = constrain_int32(commanded_pitch, pitch_limit_min*100, aparm.pitch_limit_max.get()*100);
+    const int32_t commanded_pitch = alt_pitch_controller.get_pitch_demand();
+    nav_pitch_cd = constrain_int32(commanded_pitch, aparm.pitch_limit_min.get()*100, aparm.pitch_limit_max.get()*100);
 }
 
 
 /*
-  calculate a new nav_roll_cd from the navigation controller
+  for torp auv, we always want zero roll
  */
 void Plane::calc_nav_roll()
 {
-    int32_t commanded_roll = nav_controller->nav_roll_cd();
-    nav_roll_cd = constrain_int32(commanded_roll, -roll_limit_cd, roll_limit_cd);
-    update_load_factor();
+    nav_roll_cd = 0;
 }
 
 /*
