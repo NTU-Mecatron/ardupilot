@@ -58,8 +58,8 @@ void AP_SpeedController::update(float target_speed, float current_speed)
 
     // Update PID controller with speed error
     // PID input is speed in m/s, output is throttle (-1 to 1)
-    bool limit_i_gain = true;
-    _desired_throttle = _pid_speed.update_all(_target_speed_ms, current_speed_ms, dt, limit_i_gain);
+    bool limit_i_gain = fabsf(_desired_throttle) >= 0.95f;
+    _desired_throttle = _pid_speed.update_all(target_speed, current_speed, dt, limit_i_gain);
     _desired_throttle += _pid_speed.get_ff();
     _desired_throttle = constrain_float(_desired_throttle, -1.0f, 1.0f);
 
