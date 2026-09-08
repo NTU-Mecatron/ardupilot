@@ -76,29 +76,6 @@ void Plane::stabilize_pitch()
 }
 
 /*
-  this gives the user control of the aircraft in stabilization modes, only used in Stabilize Mode
-  to be moved to mode_stabilize.cpp in future
- */
-void ModeStabilize::stabilize_stick_mixing_direct()
-{
-    if (!plane.stick_mixing_enabled()) {
-        return;
-    }
-#if HAL_QUADPLANE_ENABLED
-    if (!plane.quadplane.allow_stick_mixing()) {
-        return;
-    }
-#endif
-    float aileron = SRV_Channels::get_output_scaled(SRV_Channel::k_aileron);
-    aileron = plane.channel_roll->stick_mixing(aileron);
-    SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, aileron);
-
-    float elevator = SRV_Channels::get_output_scaled(SRV_Channel::k_elevator);
-    elevator = plane.channel_pitch->stick_mixing(elevator);
-    SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, elevator);
-}
-
-/*
   this gives the user control of the aircraft in stabilization modes
   using FBW style controls
  */
