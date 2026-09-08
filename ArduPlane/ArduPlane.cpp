@@ -226,6 +226,10 @@ void Plane::update_alt_pitch_controller(void)
         alt_pitch_controller.update(speed_scaler);
     }
 
+    // Update current speed and then compute required throttle
+    update_speed();
+    speedController.update(nav_speed_ms, velocity_body.x);
+
 #if HAL_QUADPLANE_ENABLED
     if (quadplane.in_vtol_mode() ||
         quadplane.in_assisted_flight()) {
@@ -905,6 +909,18 @@ void Plane::update_current_loc(void)
     // re-calculate relative altitude
     ahrs.get_relative_position_D_home(plane.relative_altitude);
     relative_altitude *= -1.0f;
+}
+
+/*
+  update velocity_body, returns true if successful.
+ */
+bool Plane::update_speed(void)
+{
+    Vector3f vel_ned;
+    if (!(ahrs.have_inertial_nav() && ahrs.get_velocity_NED(vel_ned)))
+        return false;
+    velocity_body = ahrs.earth_to_body(vel_ned);
+    return true;
 }
 
 // check if FLIGHT_OPTION is enabled

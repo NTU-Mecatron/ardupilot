@@ -410,6 +410,9 @@ private:
     // Difference between current altitude and desired altitude.  Centimeters
     int32_t altitude_error_cm;
 
+    // Current velocity in body frame (m/s)
+    Vector3f velocity_body;
+
     // speed scaler for control surfaces, updated at 10Hz
     float surface_speed_scaler = 1.0;
 
@@ -632,6 +635,9 @@ private:
 
     // The instantaneous desired pitch angle.  Hundredths of a degree
     int32_t nav_pitch_cd;
+    
+    // The instantaneous desired forward speed in body frame (m/s), can be negative for backwards
+    float nav_speed_ms;
 
     // the aerodynamic load factor. This is calculated from the demanded
     // roll before the roll is clipped, using 1/sqrt(cos(nav_roll))
@@ -1031,6 +1037,7 @@ private:
     void update_GPS_10Hz(void);
     void update_compass(void);
     void update_alt(void);
+    bool update_speed(void);
 #if AP_ADVANCEDFAILSAFE_ENABLED
     void afs_fs_check(void);
 #endif
