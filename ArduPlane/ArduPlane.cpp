@@ -223,7 +223,7 @@ void Plane::update_controllers_50Hz(void)
 
     if (should_run_alt_pitch_controller) {
         const float speed_scaler = get_speed_scaler();
-        alt_pitch_controller.update(speed_scaler);
+        alt_pitch_controller.update(target_alt_cm, speed_scaler);
     }
 
     // Update current speed and then compute required throttle
@@ -581,8 +581,6 @@ void Plane::update_alt()
             // TODO: an equivalent for torp?
             // target_alt_cm = MAX(target_alt_cm, prev_WP_loc.alt - home.alt) + (g2.rtl_climb_min+10)*100;
         }
-
-        alt_pitch_controller.set_target_altitude(target_alt_cm);
     }
 }
 

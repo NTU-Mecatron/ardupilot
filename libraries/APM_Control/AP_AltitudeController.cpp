@@ -41,7 +41,6 @@ const AP_Param::GroupInfo AP_AltitudeController::var_info[] = {
 // Constructor
 AP_AltitudeController::AP_AltitudeController(AP_AHRS &ahrs) :
     _ahrs(ahrs),
-    _target_alt_cm(0),
     _desired_pitch_cd(0),
     _update_last_usec(0)
 {
@@ -50,7 +49,7 @@ AP_AltitudeController::AP_AltitudeController(AP_AHRS &ahrs) :
 }
 
 /// Update altitude controller
-void AP_AltitudeController::update(float speed_scaler)
+void AP_AltitudeController::update(float target_alt_cm, float speed_scaler)
 {
     // Calculate time since last update
     uint32_t now = AP_HAL::micros();
@@ -68,7 +67,7 @@ void AP_AltitudeController::update(float speed_scaler)
     _ahrs.get_relative_position_D_home(current_alt_m);
     current_alt_m *= -1.0f;  // Convert from down to up
 
-    float target_alt_m = _target_alt_cm * 0.01f;
+    float target_alt_m = target_alt_cm * 0.01f;
 
     // Update PI controller with altitude error (note that the arguments is measurement followed by target, different from AC_PID class)
     // PI input is altitude in meters, output is desired pitch in radians
