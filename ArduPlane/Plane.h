@@ -899,7 +899,6 @@ private:
     bool stick_mixing_enabled(void);
     void stabilize_roll();
     void stabilize_pitch();
-    float stabilize_pitch_get_pitch_out();
     void stabilize_stick_mixing_fbw();
     void stabilize_yaw();
     int16_t calc_nav_yaw_coordinated();

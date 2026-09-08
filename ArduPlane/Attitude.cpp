@@ -67,69 +67,12 @@ void Plane::stabilize_roll()
  */
 void Plane::stabilize_pitch()
 {
-    int8_t force_elevator = takeoff_tail_hold();
-    if (force_elevator != 0) {
-        // we are holding the tail down during takeoff. Just convert
-        // from a percentage to a -4500..4500 centidegree angle
-        SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, 45*force_elevator);
-        return;
-    }
-
-    const float pitch_out = stabilize_pitch_get_pitch_out();
+#if HAL_QUADPLANE_ENABLED
+    // Luc_TODO
+#endif
+    const int32_t demanded_pitch = nav_pitch_cd + int32_t(g.pitch_trim * 100.0);
+    const float pitch_out = pitchController.get_servo_out(demanded_pitch - ahrs.pitch_sensor, get_speed_scaler(), false);
     SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, pitch_out);
-}
-
-float Plane::stabilize_pitch_get_pitch_out()
-{
-    const float speed_scaler = get_speed_scaler();
-#if HAL_QUADPLANE_ENABLED
-    if (!quadplane.use_fw_attitude_controllers()) {
-        // use the VTOL rate for control, to ensure consistency
-        const auto &pid_info = quadplane.attitude_control->get_rate_pitch_pid().get_pid_info();
-
-        // scale FF to angle P
-        if (quadplane.option_is_set(QuadPlane::OPTION::SCALE_FF_ANGLE_P)) {
-            const float mc_angP = quadplane.attitude_control->get_angle_pitch_p().kP()
-                * quadplane.attitude_control->get_last_angle_P_scale().y;
-            if (is_positive(mc_angP)) {
-                pitchController.set_ff_scale(MIN(1.0, 1.0 / (mc_angP * pitchController.tau())));
-            }
-        }
-
-        const int32_t pitch_out = pitchController.get_rate_out(degrees(pid_info.target), speed_scaler);
-        /* when slaving fixed wing control to VTOL control we need to decay the integrator to prevent
-           opposing integrators balancing between the two controllers
-        */
-        pitchController.decay_I();
-        return pitch_out;
-    }
-#endif
-    // if LANDING_FLARE RCx_OPTION switch is set and in FW mode, manual throttle,throttle idle then set pitch to LAND_PITCH_DEG if flight option FORCE_FLARE_ATTITUDE is set
-#if HAL_QUADPLANE_ENABLED
-    const bool quadplane_in_transition = quadplane.in_transition();
-#else
-    const bool quadplane_in_transition = false;
-#endif
-
-    int32_t demanded_pitch = nav_pitch_cd + int32_t(g.pitch_trim * 100.0) + SRV_Channels::get_output_scaled(SRV_Channel::k_throttle) * g.kff_throttle_to_pitch;
-    bool disable_integrator = false;
-    if (control_mode == &mode_stabilize && channel_pitch->get_control_in() != 0) {
-        disable_integrator = true;
-    }
-    /* force landing pitch if:
-       - flare switch high
-       - throttle stick at zero thrust
-       - in fixed wing non auto-throttle mode
-    */
-    if (!quadplane_in_transition &&
-        !control_mode->is_vtol_mode() &&
-        !control_mode->does_auto_throttle() &&
-        flare_mode == FlareMode::ENABLED_PITCH_TARGET &&
-        throttle_at_zero()) {
-        demanded_pitch = landing.get_pitch_cd();
-    }
-
-    return pitchController.get_servo_out(demanded_pitch - ahrs.pitch_sensor, speed_scaler, disable_integrator);
 }
 
 /*
