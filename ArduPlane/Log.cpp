@@ -8,7 +8,7 @@ void Plane::Log_Write_Attitude(void)
     Vector3f targets;       // Package up the targets into a vector for commonality with Copter usage of Log_Wrote_Attitude
     targets.x = nav_roll_cd;
     targets.y = nav_pitch_cd;
-    targets.z = 0; //Plane does not have the concept of navyaw. This is a placeholder.
+    targets.z = nav_yaw_rate; // Abit strange, but it is what it is for now
 
 #if HAL_QUADPLANE_ENABLED
     if (quadplane.show_vtol_view()) {
@@ -149,18 +149,15 @@ void Plane::Log_Write_OFG_Guided()
 struct PACKED log_Nav_Tuning {
     LOG_PACKET_HEADER;
     uint64_t time_us;
-    float wp_distance;
+    float   wp_distance;
     int16_t target_bearing_cd;
     int16_t nav_bearing_cd;
-    int16_t altitude_error_cm;
+    int32_t target_alt_cm;
+    int32_t alt_cm;
     float   xtrack_error;
     float   xtrack_error_i;
-    float   airspeed_error;
     int32_t target_lat;
     int32_t target_lng;
-    int32_t target_alt_wp;
-    int32_t target_alt;
-    int32_t target_airspeed;
 };
 
 // Write a navigation tuning packet
@@ -172,15 +169,12 @@ void Plane::Log_Write_Nav_Tuning()
         wp_distance         : auto_state.wp_distance,
         target_bearing_cd   : (int16_t)nav_controller->target_bearing_cd(),
         nav_bearing_cd      : (int16_t)nav_controller->nav_bearing_cd(),
-        altitude_error_cm   : (int16_t)altitude_error_cm,
+        target_alt_cm       : target_altitude.amsl_cm,
+        alt_cm              : adjusted_altitude_cm(),
         xtrack_error        : nav_controller->crosstrack_error(),
         xtrack_error_i      : nav_controller->crosstrack_error_integrator(),
-        airspeed_error      : airspeed_error,
         target_lat          : next_WP_loc.lat,
         target_lng          : next_WP_loc.lng,
-        target_alt_wp       : next_WP_loc.alt,
-        target_alt          : target_altitude.amsl_cm,
-        target_airspeed     : target_airspeed_cm,
     };
     logger.WriteBlock(&pkt, sizeof(pkt));
 }
@@ -323,17 +317,14 @@ const struct LogStructure Plane::log_structure[] = {
 // @Field: Dist: distance to the current navigation waypoint
 // @Field: TBrg: bearing to the current navigation waypoint
 // @Field: NavBrg: the vehicle's desired heading
-// @Field: AltE: difference between current vehicle height and target height
+// @Field: TAlt: target altitude
+// @Field: Alt: current altitude
 // @Field: XT: the vehicle's current distance from the current travel segment
 // @Field: XTi: integration of the vehicle's crosstrack error
-// @Field: AsE: difference between vehicle's airspeed and desired airspeed
 // @Field: TLat: target latitude
 // @Field: TLng: target longitude
-// @Field: TAW: target altitude WP
-// @Field: TAT: target altitude
-// @Field: TAsp: target airspeed
     { LOG_NTUN_MSG, sizeof(log_Nav_Tuning),         
-      "NTUN", "QfcccfffLLeee",  "TimeUS,Dist,TBrg,NavBrg,AltE,XT,XTi,AsE,TLat,TLng,TAW,TAT,TAsp", "smddmmmnDUmmn", "F0BBB0B0GG000" , true },
+      "NTUN", "QfcceeffLL",  "TimeUS,Dist,TBrg,NavBrg,TAlt,Alt,XT,XTi,TLat,TLng", "smddmmmmDU", "F0BBBB00GG" , true },
 
 // @LoggerMessage: ATRP
 // @Description: Plane AutoTune
