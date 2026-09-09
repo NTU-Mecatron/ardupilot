@@ -81,7 +81,7 @@ void Plane::loiter_angle_update(void)
 }
 
 /*
-  call control_mode->navigate() which sets high-level waypoints and speed (altitude is also set from these waypoints)
+  call control_mode->navigate() which sets high-level waypoints and speed
  */
 void Plane::navigate()
 {
