@@ -70,47 +70,28 @@ void Plane::Log_Write_FullRate(void)
 struct PACKED log_Control_Tuning {
     LOG_PACKET_HEADER;
     uint64_t time_us;
-    int16_t nav_roll_cd;
     int16_t roll;
     int16_t nav_pitch_cd;
     int16_t pitch;
-    float throttle_out;
-    float rudder_out;
-    float throttle_dem;
-    float airspeed_estimate;
-    uint8_t airspeed_estimate_status;
-    float synthetic_airspeed;
-    float EAS2TAS;
-    int32_t groundspeed_undershoot;
+    float nav_yaw_rate;
+    float yaw_rate;
+    float target_speed;
+    float speed;
 };
 
-// Write a control tuning packet. Total length : 22 bytes
+// Write a control tuning packet
 void Plane::Log_Write_Control_Tuning()
 {
-    float est_airspeed = 0;
-    AP_AHRS::AirspeedEstimateType airspeed_estimate_type = AP_AHRS::AirspeedEstimateType::NO_NEW_ESTIMATE;
-    ahrs.airspeed_estimate(est_airspeed, airspeed_estimate_type);
-
-    float synthetic_airspeed;
-    if (!ahrs.synthetic_airspeed(synthetic_airspeed)) {
-        synthetic_airspeed = logger.quiet_nan();
-    }
-
     struct log_Control_Tuning pkt = {
         LOG_PACKET_HEADER_INIT(LOG_CTUN_MSG),
         time_us         : AP_HAL::micros64(),
-        nav_roll_cd     : (int16_t)nav_roll_cd,
         roll            : (int16_t)ahrs.roll_sensor,
         nav_pitch_cd    : (int16_t)nav_pitch_cd,
         pitch           : (int16_t)ahrs.pitch_sensor,
-        throttle_out    : SRV_Channels::get_output_scaled(SRV_Channel::k_throttle),
-        rudder_out      : SRV_Channels::get_output_scaled(SRV_Channel::k_rudder),
-        throttle_dem    : speedController.get_throttle_demand(),
-        airspeed_estimate : est_airspeed,
-        airspeed_estimate_status : (uint8_t)airspeed_estimate_type,
-        synthetic_airspeed : synthetic_airspeed,
-        EAS2TAS            : ahrs.get_EAS2TAS(),
-        groundspeed_undershoot  : groundspeed_undershoot,
+        nav_yaw_rate    : nav_yaw_rate,
+        yaw_rate        : degrees(ahrs.get_gyro().z),
+        target_speed    : target_speed_ms,
+        speed           : get_forward_speed()
     };
     logger.WriteBlock(&pkt, sizeof(pkt));
 }
@@ -298,18 +279,13 @@ const struct LogStructure Plane::log_structure[] = {
 // @Field: Roll: achieved roll
 // @Field: NavPitch: desired pitch
 // @Field: Pitch: achieved pitch
-// @Field: ThO: scaled output throttle
-// @Field: RdO: scaled output rudder
-// @Field: ThD: demanded speed-height-controller throttle
-// @Field: As: airspeed estimate (or measurement if airspeed sensor healthy and ARSPD_USE>0)
-// @Field: SAs: DCM's airspeed estimate, NaN if not available
-// @Field: AsT: airspeed type ( old estimate or source of new estimate)
-// @FieldValueEnum: AsT: AP_AHRS::AirspeedEstimateType
-// @Field: E2T: equivalent to true airspeed ratio
-// @Field: GU: groundspeed undershoot when flying with minimum groundspeed
+// @Field: NavYawRate: desired yaw rate
+// @Field: YawRate: achieved yaw rate
+// @Field: TargetSpeed: desired forward speed
+// @Field: Speed: achieved forward speed
 
     { LOG_CTUN_MSG, sizeof(log_Control_Tuning),     
-      "CTUN", "QccccffffBffi",    "TimeUS,NavRoll,Roll,NavPitch,Pitch,ThO,RdO,ThD,As,AsT,SAs,E2T,GU", "sdddd---n-n-n", "FBBBB---000-B" , true },
+      "CTUN", "Qcccffff",    "TimeUS,Roll,NavPitch,Pitch,NavYawRate,YawRate,TargetSpeed,Speed", "sdddkknn", "FBBB0000" , true },
 
 // @LoggerMessage: NTUN
 // @Description: Navigation Tuning information - e.g. vehicle destination
