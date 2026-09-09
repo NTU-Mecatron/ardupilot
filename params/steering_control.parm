@@ -1,19 +1,38 @@
 # L1 control params for trajectory tracking (as well as heading hold)
 # Output lateral acceleration (m/s2)
-NAVL1_DAMPING    0.750000
-NAVL1_LIM_BANK   0.000000
+
+# Period in seconds of L1 tracking loop. This parameter is the primary control for aggressiveness of turns in auto mode. This needs to be larger for less responsive frames. The default of 20 is quite conservative, but for most RC aircraft will lead to reasonable flight. For smaller more agile aircraft a value closer to 15 is appropriate, or even as low as 10 for some very agile aircraft. When tuning, change this value in small increments, as a value that is much too small (say 5 or 10 below the right value) can lead to very radical turns, and a risk of stalling.
 NAVL1_PERIOD     15.000000
+
+# Damping ratio for L1 control. Increase this in increments of 0.05 if you are getting overshoot in path tracking. You should not need a value below 0.7 or above 0.85.
+NAVL1_DAMPING    0.750000
+
+# Crosstrack error integrator gain. This gain is applied to the crosstrack error to ensure it converges to zero. Set to zero to disable. Smaller values converge slower, higher values will cause crosstrack error oscillation.
 NAVL1_XTRACK_I   0.020000
 
-# Lat acc cascade down: yaw_rate = deg( lat_acc / speed )
-# Yaw rate (deg/s) to rudder steering (deg) PID, auto capped between -45 and 45deg
-STEER2SRV_P      1.800000
-STEER2SRV_I      0.200000
-STEER2SRV_D      0.005000
-STEER2SRV_FF     0.000000
-STEER2SRV_DRTFCT 10.000000
-STEER2SRV_DRTMIN 4500.000000
-STEER2SRV_DRTSPD 0.000000
-STEER2SRV_IMAX   1500
-STEER2SRV_MINSPD 1.000000
-STEER2SRV_TCONST 0.750000
+# Max yaw rate for all control (deg/s)
+YAW_MAX_RATE     30
+
+# Only when yaw control using heading (instead of rate), this will be used
+# Essential a P controller: desired_rate = angle_error / tconst
+# 0.5 - 1.0 is reasonable, no point setting lower than what the vehicle can achieve
+YAW_TCONST       0.500000
+
+# Lat acc cascade down: yaw_rate = lat_acc / speed
+# Yaw rate to rudder PID
+# Note that: rudder = pid.update(desired_rate * speed_scaler**2, current_rate * speed_scaler**2, dt)
+# Rudder and rates are all in radians, so all params below, when estimated, should use radians in calculations as well
+YAW_RATE_P       0.040000
+YAW_RATE_I       0.150000
+YAW_RATE_D       0.000000
+YAW_RATE_IMAX    0.666000
+YAW_RATE_FF      0.150000
+
+YAW_RATE_D_FF    0.000000
+YAW_RATE_FLTD    0.000000
+YAW_RATE_FLTE    0.000000
+YAW_RATE_FLTT    0.000000
+YAW_RATE_NEF     0
+YAW_RATE_NTF     0
+YAW_RATE_PDMX    0.000000
+YAW_RATE_SMAX    150.000000

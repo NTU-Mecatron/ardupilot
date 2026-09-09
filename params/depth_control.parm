@@ -10,19 +10,18 @@ ALT_CTRL_IMAX    0.175000
 ALT_BUOYANCY_FF  5.000000
 
 # P controller: pitch_rate = pitch_error / tconst
-# RMAX_UP and RMAX_DOWN is maximum rate (deg/s) for up and down respectively
-PTCH2SRV_TCONST  4.0
-PTCH2SRV_RMAX_UP 20
-PTCH2SRV_RMAX_DN 20
-PTCH2SRV_RLL     0.0
+PTCH_TCONST      0.500000
+PTCH_MAX_RATE    30
 
-# PID controller: Pitch rate -> elevator
-# Max elevator limit is hardcoded 45deg, but after fins mapping, the limit for each fin may be different
+# Pitch rate to elevator PID
+# Note that: elevator = pid.update(desired_rate * speed_scaler**2, current_rate * speed_scaler**2, dt)
+# Rudder and rates are all in radians, so all params below, when estimated, should use radians in calculations as well
 PTCH_RATE_P      0.30000
 PTCH_RATE_I      0.110000
 PTCH_RATE_D      0.007265
 PTCH_RATE_IMAX   0.666000
 PTCH_RATE_FF     0.595723
+
 PTCH_RATE_D_FF   0.000000
 PTCH_RATE_FLTD   12.000000
 PTCH_RATE_FLTE   0.000000
