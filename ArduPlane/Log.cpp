@@ -275,7 +275,6 @@ const struct LogStructure Plane::log_structure[] = {
 // @LoggerMessage: CTUN
 // @Description: Control Tuning information
 // @Field: TimeUS: Time since system startup
-// @Field: NavRoll: desired roll
 // @Field: Roll: achieved roll
 // @Field: NavPitch: desired pitch
 // @Field: Pitch: achieved pitch
