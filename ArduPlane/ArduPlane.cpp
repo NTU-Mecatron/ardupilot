@@ -223,7 +223,7 @@ void Plane::update_controllers_50Hz(void)
 
     if (should_run_alt_pitch_controller) {
         const float speed_scaler = get_speed_scaler();
-        alt_controller.update(altitude_error_cm, speed_scaler);
+        alt_controller.update(target_altitude.amsl_cm, adjusted_altitude_cm(), speed_scaler);
     }
 
     // Update current velocity and then compute required throttle

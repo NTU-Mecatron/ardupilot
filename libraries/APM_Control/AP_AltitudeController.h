@@ -19,10 +19,10 @@ public:
     // Parameter definitions
     static const struct AP_Param::GroupInfo var_info[];
 
-    /// Update altitude controller with alt error in meters (positive means target is above current altitude)
+    /// Update altitude controller with alt error in meters (up is positive)
     /// Computed desired pitch is speed-scaled (faster speed requires less pitch)
     /// Must be called at minimum 50Hz
-    void update(float alt_error_cm, float speed_scaler);
+    void update(float target_alt_cm, float current_alt_cm, float speed_scaler);
 
     /// Get desired pitch angle, to be used by the pitch controller
     /// @return  Desired pitch in centidegrees (positive = nose up)
