@@ -223,7 +223,9 @@ void Plane::update_controllers_50Hz(void)
 
     if (should_run_alt_pitch_controller) {
         const float speed_scaler = get_speed_scaler();
-        alt_controller.update(target_altitude.amsl_cm, adjusted_altitude_cm(), speed_scaler);
+        if (speed_scaler > 1e-2f) {
+            alt_controller.update(target_altitude.amsl_cm, adjusted_altitude_cm(), speed_scaler);
+        }
     }
 
     // Update current velocity and then compute required throttle
@@ -910,13 +912,21 @@ void Plane::calc_speed_scaler(void)
 #endif
 
     float speed = get_forward_speed();
-    float speed_scaler = 1.0f;
 
-    if (arming.is_armed_and_safety_off() && fabsf(speed) >= 0.1f) {
-        const float scale_min = MIN(0.5, g.scaling_speed / aparm.airspeed_max);
-        const float scale_max = MAX(2.0, g.scaling_speed / aparm.airspeed_min);
-        speed_scaler = constrain_float(g.scaling_speed / speed, scale_min, scale_max);
+    if (!arming.is_armed_and_safety_off() || fabsf(speed) < aparm.airspeed_min) {
+        // When we are too slow, there is no point using speed scaling for control surfaces
+        // We set it to zero instead of -1 so that when we analyze FF from logs, it is clear that the surface speed scaling was effectively disabled
+        surface_speed_scaler = 0.0f;
+        return;
+    } 
+
+    if (surface_speed_scaler < 1e-2f) {
+        surface_speed_scaler = 1.0f;    // Re-init
     }
+
+    const float scale_min = MIN(0.5, g.scaling_speed / aparm.airspeed_max);
+    const float scale_max = MAX(2.0, g.scaling_speed / aparm.airspeed_min);
+    const float speed_scaler = constrain_float(g.scaling_speed / speed, scale_min, scale_max);
 
     // apply low-pass filter to smooth out rapid changes in speed_scaler
     const float cutoff_Hz = 2.0;

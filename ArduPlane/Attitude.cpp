@@ -56,7 +56,8 @@ void Plane::stabilize_roll()
 #if HAL_QUADPLANE_ENABLED
     // Luc_TODO
 #endif
-    const float roll_out = rollController.get_servo_out(nav_roll_cd - ahrs.roll_sensor, get_speed_scaler(), false);
+    const float speed_scaler = get_speed_scaler();
+    const float roll_out = (speed_scaler > 1e-2f) ? rollController.get_servo_out(nav_roll_cd - ahrs.roll_sensor, speed_scaler, false) : 0.0f;
     SRV_Channels::set_output_scaled(SRV_Channel::k_aileron, roll_out);
 }
 
@@ -71,7 +72,8 @@ void Plane::stabilize_pitch()
     // Luc_TODO
 #endif
     const int32_t demanded_pitch = nav_pitch_cd + int32_t(g.pitch_trim * 100.0);
-    const float pitch_out = pitchController.get_servo_out(demanded_pitch - ahrs.pitch_sensor, get_speed_scaler(), false);
+    const float speed_scaler = get_speed_scaler();
+    const float pitch_out = (speed_scaler > 1e-2f) ? pitchController.get_servo_out(demanded_pitch - ahrs.pitch_sensor, speed_scaler, false) : 0.0f;
     SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, pitch_out);
 }
 
@@ -153,7 +155,8 @@ void Plane::stabilize_yaw()
     if (control_mode == &mode_stabilize && rudder_input() != 0) {
         disable_integrator = true;
     }
-    const float rudder_out = yawController.get_rate_out(nav_yaw_rate, get_speed_scaler(), disable_integrator);
+    const float speed_scaler = get_speed_scaler();
+    const float rudder_out = (speed_scaler > 1e-2f) ? yawController.get_rate_out(nav_yaw_rate, speed_scaler, disable_integrator) : 0.0f;
     SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, rudder_out);
 }
 
