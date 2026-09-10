@@ -18,9 +18,9 @@ public:
     // Parameter definitions
     static const struct AP_Param::GroupInfo var_info[];
 
-    /// Update speed controller with the latest speed error (in m/s) to compute the desired throttle
+    /// Update speed controller with target speed and current speed to compute the desired throttle
     /// Must be called at minimum 50Hz
-    void update(float speed_error);
+    void update(float target_speed, float current_speed);
 
     /// Get desired throttle pct, to be used by the motor controller
     /// @return  Desired throttle pct (-100 to 100)
@@ -34,7 +34,7 @@ public:
 
 private:
     // PI controller (w FF): speed error -> throttle
-    AC_PID _pid_speed{0.2f, 0.02f, 0.0f, 0.2f, 0.2f, 0.0f, 0.0f, 0.0f};
+    AC_PID _pid_speed{0.2f, 0.01f, 0.0f, 0.1f, 0.2f, 5.0f, 5.0f, 0.0f};
 
     // State variables
     float   _desired_throttle;      // Desired throttle in percent

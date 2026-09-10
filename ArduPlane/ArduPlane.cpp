@@ -223,12 +223,12 @@ void Plane::update_controllers_50Hz(void)
 
     if (should_run_alt_pitch_controller) {
         const float speed_scaler = get_speed_scaler();
-        alt_controller.update(altitude_error_cm, speed_scaler);
+        alt_controller.update(target_altitude.amsl_cm, adjusted_altitude_cm(), speed_scaler);
     }
 
     // Update current velocity and then compute required throttle
     update_velocity();
-    speedController.update(target_speed_ms - get_forward_speed());
+    speedController.update(target_speed_ms, get_forward_speed());
 
 #if HAL_QUADPLANE_ENABLED
     if (quadplane.in_vtol_mode() ||

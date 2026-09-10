@@ -45,10 +45,9 @@ void Plane::Log_Write_Attitude(void)
 
     logger.Write_PID(LOG_PIDR_MSG, rollController.get_pid_info());
     logger.Write_PID(LOG_PIDP_MSG, pitchController.get_pid_info());
-
-    if (yawController.enabled()) {
-        logger.Write_PID(LOG_PIDY_MSG, yawController.get_pid_info());
-    }
+    logger.Write_PID(LOG_PIDY_MSG, yawController.get_pid_info());
+    logger.Write_PID(LOG_PIDS_MSG, speedController.get_pid_info());
+    logger.Write_PID(LOG_PIDA_MSG, alt_controller.get_pid_info());
 
     AP::ahrs().Log_Write();
 }
