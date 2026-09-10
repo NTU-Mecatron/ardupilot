@@ -6,6 +6,10 @@ THR_MAX         100
 # Disable rc thr failsafe as most of the time we do not have rc
 THR_FAILSAFE     0
 
+# Control tuning and navigation tuning only
+LOG_BITMASK      8241
+LOG_FILE_DSRMROT 1
+
 # Rudders, top and bottom
 SERVO1_FUNCTION 21
 SERVO3_FUNCTION 21
