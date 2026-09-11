@@ -1,13 +1,13 @@
 # Speed (m/s) to compared again when speed scaling for roll, pitch, yaw controllers
 # Changing this param will affect all PID params for the above controllers
 # Should be set at the most commonly used speed for the vehicle
-SCALING_SPEED    4.00
+SCALING_SPEED    3.00
 
 # Speed cruise should be set to same as scaling speed
 # Speed max and min are limits for speed scaling, and for operation in general
-SPEED_CRUISE     4.00
+SPEED_CRUISE     3.00
 SPEED_MAX        8.00
-SPEED_MIN        0.50
+SPEED_MIN        1.00
 
 # Speed (m/s) to throttle (-1.0 to 1.0) PID
 SPD_CTRL_P       0.0
@@ -17,9 +17,9 @@ SPD_CTRL_IMAX    0.20
 SPD_CTRL_FF      0.065
 
 SPD_CTRL_D_FF    0.00
-SPD_CTRL_FLTD    0.00
+SPD_CTRL_FLTD    5.00
 SPD_CTRL_FLTE    0.00
-SPD_CTRL_FLTT    0.00
+SPD_CTRL_FLTT    5.00
 SPD_CTRL_NEF     0.0
 SPD_CTRL_NTF     0.0
 SPD_CTRL_PDMX    0.00

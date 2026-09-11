@@ -11,7 +11,7 @@ NAVL1_DAMPING    0.750000
 NAVL1_XTRACK_I   0.020000
 
 # Max yaw rate for all control (deg/s)
-YAW_MAX_RATE     30
+YAW_MAX_RATE     20
 
 # Only when yaw control using heading (instead of rate), this will be used
 # Essential a P controller: desired_rate = angle_error / tconst
@@ -29,9 +29,9 @@ YAW_RATE_IMAX    0.666000
 YAW_RATE_FF      0.150000
 
 YAW_RATE_D_FF    0.000000
-YAW_RATE_FLTD    0.000000
+YAW_RATE_FLTD    5.000000
 YAW_RATE_FLTE    0.000000
-YAW_RATE_FLTT    0.000000
+YAW_RATE_FLTT    5.000000
 YAW_RATE_NEF     0
 YAW_RATE_NTF     0
 YAW_RATE_PDMX    0.000000
