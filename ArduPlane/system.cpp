@@ -129,6 +129,9 @@ void Plane::init_ardupilot()
     // that can change initial values of channels
     init_rc_out_aux();
 
+    // initialise underwater fins mixing
+    fins_mixing.init();
+
     if (g2.oneshot_mask != 0) {
         hal.rcout->set_output_mode(g2.oneshot_mask, AP_HAL::RCOutput::MODE_PWM_ONESHOT);
     }

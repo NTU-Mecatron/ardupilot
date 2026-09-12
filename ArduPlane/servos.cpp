@@ -886,24 +886,32 @@ void Plane::servos_output(void)
 {
     SRV_Channels::cork();
 
-    // support twin-engine aircraft
-    servos_twin_engine_mix();
+    if (fins_mixing.enabled()) {
+        const float aileron = SRV_Channels::get_output_scaled(SRV_Channel::k_aileron);
+        const float elevator = SRV_Channels::get_output_scaled(SRV_Channel::k_elevator);
+        const float rudder = SRV_Channels::get_output_scaled(SRV_Channel::k_rudder);
 
-    // run vtail and elevon mixers
-    channel_function_mixer(SRV_Channel::k_aileron, SRV_Channel::k_elevator, SRV_Channel::k_elevon_left, SRV_Channel::k_elevon_right);
-    channel_function_mixer(SRV_Channel::k_rudder,  SRV_Channel::k_elevator, SRV_Channel::k_vtail_right, SRV_Channel::k_vtail_left);
+        fins_mixing.output(aileron, elevator, rudder);
+    } else {
+        // support twin-engine aircraft
+        servos_twin_engine_mix();
+
+        // run vtail and elevon mixers
+        channel_function_mixer(SRV_Channel::k_aileron, SRV_Channel::k_elevator, SRV_Channel::k_elevon_left, SRV_Channel::k_elevon_right);
+        channel_function_mixer(SRV_Channel::k_rudder,  SRV_Channel::k_elevator, SRV_Channel::k_vtail_right, SRV_Channel::k_vtail_left);
 
 #if HAL_QUADPLANE_ENABLED
-    // cope with tailsitters and bicopters
-    quadplane.tailsitter.output();
-    quadplane.tiltrotor.bicopter_output();
+        // cope with tailsitters and bicopters
+        quadplane.tailsitter.output();
+        quadplane.tiltrotor.bicopter_output();
 #endif
 
-    // support forced flare option
-    force_flare();
+        // support forced flare option
+        force_flare();
 
-    // implement differential spoilers
-    dspoiler_update();
+        // implement differential spoilers
+        dspoiler_update();
+    }
 
     //  set control surface servos to neutral
     landing_neutral_control_surface_servos();
