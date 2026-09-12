@@ -154,6 +154,43 @@ void FinsMixing::_compute_control_alloc_mat()
         return;
     }
 
+    if (_num_fins == 1) {
+        const Vector3f b0(_control_eff_mat[0][0], _control_eff_mat[1][0], _control_eff_mat[2][0]);
+        const float dot = b0 * b0;
+        if (dot > 1e-6f) {
+            const Vector3f alloc_row0 = b0 / dot;
+            _control_alloc_mat[0][0] = alloc_row0.x;
+            _control_alloc_mat[0][1] = alloc_row0.y;
+            _control_alloc_mat[0][2] = alloc_row0.z;
+        }
+        return;
+    }
+
+    // Left inverse: A+ = (A^T * A)^-1 * A^T when m >= n (i.e. 2 fins)
+    if (_num_fins == 2) {
+        const Vector3f b0(_control_eff_mat[0][0], _control_eff_mat[1][0], _control_eff_mat[2][0]);
+        const Vector3f b1(_control_eff_mat[0][1], _control_eff_mat[1][1], _control_eff_mat[2][1]);
+        const float K[4] = {
+            b0 * b0, b0 * b1,
+            b1 * b0, b1 * b1
+        };
+        float K_inv[4];
+        if (mat_inverse(K, K_inv, 2)) {
+            const Vector3f alloc_row0 = b0 * K_inv[0] + b1 * K_inv[1];
+            const Vector3f alloc_row1 = b0 * K_inv[2] + b1 * K_inv[3];
+
+            _control_alloc_mat[0][0] = alloc_row0.x;
+            _control_alloc_mat[0][1] = alloc_row0.y;
+            _control_alloc_mat[0][2] = alloc_row0.z;
+
+            _control_alloc_mat[1][0] = alloc_row1.x;
+            _control_alloc_mat[1][1] = alloc_row1.y;
+            _control_alloc_mat[1][2] = alloc_row1.z;
+        }
+        return;
+    }
+
+    // Right inverse: A+ = A^T * (A * A^T)^-1 (when m <= n, i.e. >= 3 fins)
     // Compute M = B * B^T (3x3) using outer product sum: sum(b_k * b_k^T)
     Matrix3f M;
     for (uint8_t k = 0; k < _num_fins; k++) {
