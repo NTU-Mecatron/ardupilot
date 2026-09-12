@@ -21,13 +21,13 @@ const AP_Param::GroupInfo FinsMixing::var_info[] = {
 
     // @Param: C_RLL_FT
     // @DisplayName: Canard roll factor
-    // @Description: Roll effectiveness factor of canards in matrix
+    // @Description: Roll effectiveness factor of canards in matrix. Can be set to zero to disable roll contribution from canards.
     // @User: Standard
     AP_GROUPINFO("C_RLL_FT", 3, FinsMixing, _c_rll_ft, 0.0f),
 
     // @Param: C_PIT_FT
     // @DisplayName: Canard pitch factor
-    // @Description: Pitch effectiveness factor of canards in matrix
+    // @Description: Pitch effectiveness factor of canards in matrix. Must be positive number and smaller than the pitch factor of back fins.
     // @User: Standard
     AP_GROUPINFO("C_PIT_FT", 4, FinsMixing, _c_pit_ft, 0.3f),
 
@@ -110,6 +110,7 @@ void FinsMixing::_compute_control_alloc_mat()
     memset(_control_alloc_mat, 0, sizeof(_control_alloc_mat));
 
     if (_num_fins == 0) {
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "All fins are not functioning");
         return;
     }
 
@@ -121,6 +122,9 @@ void FinsMixing::_compute_control_alloc_mat()
             _control_alloc_mat[0][0] = alloc_row0.x;
             _control_alloc_mat[0][1] = alloc_row0.y;
             _control_alloc_mat[0][2] = alloc_row0.z;
+            gcs().send_text(MAV_SEVERITY_EMERGENCY, "Updated control allocation matrix, but only one fin left!");
+        } else {
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "Failed to compute control allocation matrix for single fin!");
         }
         return;
     }
@@ -145,6 +149,9 @@ void FinsMixing::_compute_control_alloc_mat()
             _control_alloc_mat[1][0] = alloc_row1.x;
             _control_alloc_mat[1][1] = alloc_row1.y;
             _control_alloc_mat[1][2] = alloc_row1.z;
+            gcs().send_text(MAV_SEVERITY_ERROR, "Updated control allocation matrix for two fins!");
+        } else {
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "Failed to compute control allocation matrix for two fins!");
         }
         return;
     }
@@ -159,7 +166,10 @@ void FinsMixing::_compute_control_alloc_mat()
 
     // Invert M (guaranteed non-singular since roll factor >= 0.5)
     if (!M.invert()) {
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "Failed to compute control allocation matrix for %d fins. Check your control effectiveness matrix!", _num_fins);
         return;
+    } else {
+        gcs().send_text(MAV_SEVERITY_INFO, "Updated control allocation matrix for %d fins successfully.", _num_fins);
     }
 
     // Compute B^dagger = B^T * M^-1
@@ -204,9 +214,9 @@ void FinsMixing::disable_fin(int fin_index)
 }
 
 /*
-  Compute and apply the fin deflections based on the desired roll, pitch, and yaw commands.
+  Compute and apply the fin deflections based on the desired roll, pitch, and yaw commands (in cd between -4500 and 4500).
   Disabled fins are set to zero output.
-  Fins must be assigned script functions 1 to 6.
+  Fins must be assigned script functions 1 to n.
  */
 void FinsMixing::output(float roll, float pitch, float yaw)
 {
