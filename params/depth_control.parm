@@ -1,5 +1,5 @@
 # Vehicle pitch limits (positive is pitch up)
-PTCH_LIM_MAX_DEG 15.000000
+PTCH_LIM_MAX_DEG 20.000000
 PTCH_LIM_MIN_DEG -20.000000
 
 # PI controller: altitude -> pitch
@@ -17,13 +17,13 @@ PTCH_MAX_RATE    20
 # Note that: elevator = pid.update(desired_rate * speed_scaler**2, current_rate * speed_scaler**2, dt)
 # Rudder and rates are all in radians, so all params below, when estimated, should use radians in calculations as well
 PTCH_RATE_P      0.300000
-PTCH_RATE_I      0.150000
-PTCH_RATE_D      0.0100000
-PTCH_RATE_IMAX   0.500000
+PTCH_RATE_I      0.020000
+PTCH_RATE_D      0.000000
+PTCH_RATE_IMAX   0.150000
 PTCH_RATE_FF     2.0
 
 PTCH_RATE_D_FF   0.000000
-PTCH_RATE_FLTD   10.000000
+PTCH_RATE_FLTD   4.000000
 PTCH_RATE_FLTE   0.000000
 PTCH_RATE_FLTT   10.000000
 PTCH_RATE_NEF    0
