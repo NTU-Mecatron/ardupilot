@@ -17,10 +17,10 @@ PTCH_MAX_RATE    20
 # Note that: elevator = pid.update(desired_rate * speed_scaler**2, current_rate * speed_scaler**2, dt)
 # Rudder and rates are all in radians, so all params below, when estimated, should use radians in calculations as well
 PTCH_RATE_P      0.300000
-PTCH_RATE_I      0.020000
+PTCH_RATE_I      0.030000
 PTCH_RATE_D      0.000000
 PTCH_RATE_IMAX   0.150000
-PTCH_RATE_FF     2.0
+PTCH_RATE_FF     2.5
 
 PTCH_RATE_D_FF   0.000000
 PTCH_RATE_FLTD   4.000000
