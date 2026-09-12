@@ -29,7 +29,7 @@ const AP_Param::GroupInfo FinsMixing::var_info[] = {
     // @DisplayName: Canard pitch factor
     // @Description: Pitch effectiveness factor of canards in matrix
     // @User: Standard
-    AP_GROUPINFO("C_PIT_FT", 4, FinsMixing, _c_pit_ft, 0.0f),
+    AP_GROUPINFO("C_PIT_FT", 4, FinsMixing, _c_pit_ft, 0.3f),
 
     AP_GROUPEND
 };
@@ -54,90 +54,49 @@ void FinsMixing::setup_fins(torp_fins_config config)
     memset(_control_alloc_mat, 0, sizeof(_control_alloc_mat));
     memset(_fin_disabled, 0, sizeof(_fin_disabled));
 
-    const float rll = MAX(_rll_ft.get(), 0.5f);
+    const float c45 = 0.70710678f;
+    const float rll = MAX(_rll_ft.get(), 0.2f);
+    _num_fins = 4;
+
+    Vector3f fin_rpy[TORP_FINS_MAX] = {};
 
     switch (config) {
-    case PLUS_FIN: {
-        // Plus fin (1: top, 2: right, 3: bottom, 4: left)
-        _num_fins = 4;
-        for (uint8_t i = 0; i < _num_fins; i++) {
-            _fin_servo_idx[i] = i;
-        }
-
-        // Roll row: [ RLL_FT, RLL_FT, RLL_FT, RLL_FT ]
-        _control_eff_mat[0][0] = rll;
-        _control_eff_mat[0][1] = rll;
-        _control_eff_mat[0][2] = rll;
-        _control_eff_mat[0][3] = rll;
-
-        // Pitch row: [ 0, 1, 0, -1 ]
-        _control_eff_mat[1][0] = 0.0f;
-        _control_eff_mat[1][1] = 1.0f;
-        _control_eff_mat[1][2] = 0.0f;
-        _control_eff_mat[1][3] = -1.0f;
-
-        // Yaw row: [ -1, 0, 1, 0 ]
-        _control_eff_mat[2][0] = -1.0f;
-        _control_eff_mat[2][1] = 0.0f;
-        _control_eff_mat[2][2] = 1.0f;
-        _control_eff_mat[2][3] = 0.0f;
+    case PLUS_FIN:
+    case PLUS_FIN_CANARDS:
+        fin_rpy[0] = Vector3f(rll, 0.0f, -1.0f); // Fin 1: top
+        fin_rpy[1] = Vector3f(rll, 1.0f, 0.0f);  // Fin 2: right
+        fin_rpy[2] = Vector3f(rll, 0.0f, 1.0f);  // Fin 3: bottom
+        fin_rpy[3] = Vector3f(rll, -1.0f, 0.0f); // Fin 4: left
         break;
-    }
 
-    case X_FIN: {
-        // X fin (1: top right, 2: bottom right, 3: bottom left, 4: top left)
-        _num_fins = 4;
-        for (uint8_t i = 0; i < _num_fins; i++) {
-            _fin_servo_idx[i] = i;
-        }
-        const float c45 = 0.70710678f;
-
-        // Roll row: [ RLL_FT, RLL_FT, RLL_FT, RLL_FT ]
-        _control_eff_mat[0][0] = rll;
-        _control_eff_mat[0][1] = rll;
-        _control_eff_mat[0][2] = rll;
-        _control_eff_mat[0][3] = rll;
-
-        // Pitch row: [ 0.707, 0.707, -0.707, -0.707 ]
-        _control_eff_mat[1][0] = c45;
-        _control_eff_mat[1][1] = c45;
-        _control_eff_mat[1][2] = -c45;
-        _control_eff_mat[1][3] = -c45;
-
-        // Yaw row: [ -0.707, 0.707, 0.707, -0.707 ]
-        _control_eff_mat[2][0] = -c45;
-        _control_eff_mat[2][1] = c45;
-        _control_eff_mat[2][2] = c45;
-        _control_eff_mat[2][3] = -c45;
+    case X_FIN:
+    case X_FIN_CANARDS:
+        fin_rpy[0] = Vector3f(rll, c45, -c45);  // Fin 1: top right
+        fin_rpy[1] = Vector3f(rll, c45, c45);   // Fin 2: bottom right
+        fin_rpy[2] = Vector3f(rll, -c45, c45);  // Fin 3: bottom left
+        fin_rpy[3] = Vector3f(rll, -c45, -c45); // Fin 4: top left
         break;
-    }
 
-    case PLUS_FIN_CANARDS: {
-        // Placeholder for Plus-fin with canards
-        _num_fins = 6;
-        for (uint8_t i = 0; i < _num_fins; i++) {
-            _fin_servo_idx[i] = i;
-        }
-        break;
-    }
-
-    case X_FIN_CANARDS: {
-        // Placeholder for X-fin with canards
-        _num_fins = 6;
-        for (uint8_t i = 0; i < _num_fins; i++) {
-            _fin_servo_idx[i] = i;
-        }
-        break;
-    }
-
-    case CUSTOM: {
+    case CUSTOM:
         // Placeholder for custom fin configuration
-        _num_fins = 4;
-        for (uint8_t i = 0; i < _num_fins; i++) {
-            _fin_servo_idx[i] = i;
-        }
         break;
     }
+
+    // Optionally add canards control
+    if (config == PLUS_FIN_CANARDS || config == X_FIN_CANARDS) {
+        _num_fins = 6;
+        const float c_rll = _c_rll_ft.get();  // Rll factor can be set to zero to disable roll contribution
+        const float c_pit = MAX(_c_pit_ft.get(), 0.1f);   // Pitch factor is typically less than half of the back fins for stability
+        fin_rpy[4] = Vector3f(c_rll, -c_pit, 0.0f); // Canard 1: right
+        fin_rpy[5] = Vector3f(c_rll, c_pit, 0.0f);  // Canard 2: left
+    }
+
+    // Populate control effectiveness matrix and servo indices in one shot
+    for (uint8_t i = 0; i < _num_fins; i++) {
+        _fin_servo_idx[i] = i;
+        _control_eff_mat[0][i] = fin_rpy[i].x;
+        _control_eff_mat[1][i] = fin_rpy[i].y;
+        _control_eff_mat[2][i] = fin_rpy[i].z;
     }
 
     _compute_control_alloc_mat();
