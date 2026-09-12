@@ -273,8 +273,8 @@ void FinsMixing::output(float roll, float pitch, float yaw)
         const Vector3f alloc_row(_control_alloc_mat[i][0], _control_alloc_mat[i][1], _control_alloc_mat[i][2]);
         float deflection = alloc_row * cmd;
 
-        // Constrain to standard servo range [-4500, 4500] centidegrees
-        deflection = constrain_float(deflection, -4500.0f, 4500.0f);
+        // Constrain to standard servo range [-3000, 3000] centidegrees
+        deflection = constrain_float(deflection, -3000.0f, 3000.0f);
 
         SRV_Channels::set_output_scaled(
             (SRV_Channel::Aux_servo_function_t)(SRV_Channel::k_scripting1 + servo_idx),
