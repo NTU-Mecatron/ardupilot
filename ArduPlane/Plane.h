@@ -99,6 +99,7 @@
 #include "GCS_Mavlink.h"
 #include "GCS_Plane.h"
 #include "quadplane.h"
+#include "fins_mixing.h"
 #include <AP_Tuning/AP_Tuning_config.h>
 #if AP_TUNING_ENABLED
 #include "tuning.h"
@@ -227,6 +228,8 @@ private:
     AP_AttitudeController pitchController{aparm, AP_AutoTune::AUTOTUNE_PITCH};  // Convert pitch error or pitch rate to elevator demand 
     AP_AttitudeController yawController{aparm, AP_AutoTune::AUTOTUNE_YAW};      // Convert yaw rate (equal lat_acc/speed) to rudder demand 
     AP_SpeedController speedController{};   // Convert speed error to throttle demand
+
+    FinsMixing fins_mixing;
 
     // Training mode
     bool training_manual_roll;  // user has manual roll control

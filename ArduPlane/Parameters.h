@@ -87,7 +87,7 @@ public:
         k_param_nav_controller, // unused
         k_param_elevon_output, // unused
         k_param_att_controller, // unused
-        k_param_mixing_gain,
+        k_param_fins_mixing,
         k_param_scheduler,
         k_param_relay,
         k_param_takeoff_throttle_delay,
