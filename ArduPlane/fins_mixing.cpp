@@ -283,3 +283,26 @@ void FinsMixing::output(float roll, float pitch, float yaw)
     }
 }
 
+/*
+  Log fin deflections to dataflash
+ */
+void FinsMixing::log()
+{
+    if (!enabled()) {
+        return;
+    }
+
+    struct log_FINS pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_FINS_MSG),
+        time_us : AP_HAL::micros64(),
+        fin1    : SRV_Channels::get_output_scaled(SRV_Channel::k_scripting1),
+        fin2    : SRV_Channels::get_output_scaled(SRV_Channel::k_scripting2),
+        fin3    : SRV_Channels::get_output_scaled(SRV_Channel::k_scripting3),
+        fin4    : SRV_Channels::get_output_scaled(SRV_Channel::k_scripting4),
+        fin5    : SRV_Channels::get_output_scaled(SRV_Channel::k_scripting5),
+        fin6    : SRV_Channels::get_output_scaled(SRV_Channel::k_scripting6),
+    };
+
+    AP::logger().WriteBlock(&pkt, sizeof(pkt));
+}
+

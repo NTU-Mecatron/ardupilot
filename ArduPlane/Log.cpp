@@ -227,6 +227,7 @@ void Plane::Log_Write_RC(void)
         logger.Write_RSSI();
     }
     Log_Write_AETR();
+    fins_mixing.log();
 }
 
 void Plane::Log_Write_Guided(void)
@@ -427,6 +428,18 @@ const struct LogStructure Plane::log_structure[] = {
 // @Field: SS: Surface movement / airspeed scaling value
     { LOG_AETR_MSG, sizeof(log_AETR),
       "AETR", "Qfffffff",  "TimeUS,Ail,Elev,Thr,Rudd,Flap,Steer,SS", "s-------", "F-------" , true },
+
+// @LoggerMessage: FINS
+// @Description: Fin deflections for underwater torpedo vehicle
+// @Field: TimeUS: Time since system startup
+// @Field: Fin1: Fin 1 deflection
+// @Field: Fin2: Fin 2 deflection
+// @Field: Fin3: Fin 3 deflection
+// @Field: Fin4: Fin 4 deflection
+// @Field: Fin5: Fin 5 deflection
+// @Field: Fin6: Fin 6 deflection
+    { LOG_FINS_MSG, sizeof(FinsMixing::log_FINS),
+      "FINS", "Qffffff",  "TimeUS,Fin1,Fin2,Fin3,Fin4,Fin5,Fin6", "s------", "F------" , true },
 
 #if OFFBOARD_GUIDED == ENABLED
 // @LoggerMessage: OFG

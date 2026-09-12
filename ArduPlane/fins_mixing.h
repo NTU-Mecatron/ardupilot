@@ -6,6 +6,7 @@
 #include <AP_Param/AP_Param.h>
 #include <AP_Math/AP_Math.h>
 #include <SRV_Channel/SRV_Channel.h>
+#include <AP_Logger/LogStructure.h>
 
 #define TORP_FINS_MAX 6
 
@@ -19,6 +20,17 @@ public:
         CUSTOM = 4,
     };
 
+    struct PACKED log_FINS {
+        LOG_PACKET_HEADER;
+        uint64_t time_us;
+        float fin1;
+        float fin2;
+        float fin3;
+        float fin4;
+        float fin5;
+        float fin6;
+    };
+
     FinsMixing();
 
     /* Do not allow copies */
@@ -28,6 +40,7 @@ public:
     void setup_fins(torp_fins_config config);
     void output(float roll, float pitch, float yaw);
     void disable_fin(int fin_index);
+    void log();
 
     bool enabled() const { return _config.get() >= 0 && _config.get() <= CUSTOM; }
     int8_t get_config() const { return _config.get(); }
