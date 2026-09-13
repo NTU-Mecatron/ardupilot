@@ -1,0 +1,92 @@
+# Compulsory bidirectional thruster setup
+USE_REV_THRUST  1
+THR_MIN         -100
+THR_MAX         100
+
+# Disable rc thr failsafe as most of the time we do not have rc
+THR_FAILSAFE     0
+
+# Control tuning and navigation tuning only
+LOG_BITMASK      8241
+LOG_FILE_DSRMROT 1
+
+# Disable stick mixing
+STICK_MIXING     0
+
+# Changing any of these fins configs requires reboot to take effect
+# Fins mixing config (0-plus, 1-X, 2-plus-w-canards, 3-x-w-canards)
+FINS_CONFIG      3
+# Roll effectiveness factor in control effectiveness matrix. Should be equal to r/x where r is the body radius and x is distance from CG to fin along the forward axis.
+FINS_RLL_FT      0.330000
+# Pitch effectiveness factor of canards in matrix. Must be positive number and smaller than the pitch factor of back fins (which is either 1 or 0.707).
+FINS_C_PIT_FT    0.300000
+# Roll effectiveness factor of canards in matrix. Can be set to zero to disable roll contribution from canards.
+FINS_C_RLL_FT    0.000000
+
+# Script 1-6 functions for fins
+SERVO1_FUNCTION 94
+SERVO2_FUNCTION 95
+SERVO3_FUNCTION 96
+SERVO4_FUNCTION 97
+SERVO6_FUNCTION 98
+SERVO7_FUNCTION 99
+
+# Throttle
+SERVO5_FUNCTION 70
+
+# Servo directions
+SERVO1_REVERSED 0
+SERVO2_REVERSED 0
+SERVO3_REVERSED 0
+SERVO4_REVERSED 0
+
+# Servo min, should be whatever value that can set the servo to -45 deg
+SERVO1_MIN 1000
+SERVO2_MIN 1000
+SERVO3_MIN 1000
+SERVO4_MIN 1000
+SERVO5_MIN 1000
+
+# Servo max, should be whatever value that can set the servo to 45 deg
+SERVO1_MAX 2000
+SERVO2_MAX 2000
+SERVO3_MAX 2000
+SERVO4_MAX 2000
+SERVO5_MAX 2000
+
+# Servo trim
+SERVO1_TRIM 1500
+SERVO2_TRIM 1500
+SERVO3_TRIM 1500
+SERVO4_TRIM 1500
+SERVO5_TRIM 1500
+
+# RC Mapping
+RCMAP_ROLL 1
+RCMAP_PITCH 2
+RCMAP_THROTTLE 3
+RCMAP_YAW 4
+
+# RC min
+RC1_MIN 1000
+RC2_MIN 1000
+RC3_MIN 1000
+RC4_MIN 1000
+
+# RC max
+RC1_MAX 2000
+RC2_MAX 2000
+RC3_MAX 2000
+RC4_MAX 2000
+
+# RC trim
+RC1_TRIM 1500
+RC2_TRIM 1500
+RC3_TRIM 1500
+RC4_TRIM 1500
+
+# RC reverse
+RC1_REVERSED 0
+RC2_REVERSED 0
+RC3_REVERSED 0
+RC4_REVERSED 0
