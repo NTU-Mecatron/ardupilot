@@ -194,6 +194,7 @@ float AP_AttitudeController::get_rate_out(float desired_rate, float scaler, bool
     // fix the logged target and actual values to not have the scalers applied
     pinfo.target = desired_rate;
     pinfo.actual = degrees(rate);
+    pinfo.error = pinfo.target - pinfo.actual;
 
     // sum components
     float out = pinfo.FF + pinfo.P + pinfo.I + pinfo.D + pinfo.DFF;
