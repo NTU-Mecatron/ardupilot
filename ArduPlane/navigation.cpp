@@ -209,6 +209,65 @@ void Plane::update_loiter(uint16_t radius)
     }
 }
 
+void Plane::update_fbw(bool control_speed, bool control_altitude, bool hold_course)
+{
+    uint32_t now = micros();
+    if (now - target_altitude.last_elev_check_us >= 100000)
+    {
+        // we don't run this on every loop as it would give too small granularity on quadplanes at 300Hz, and
+        // give below 1cm altitude change, which would result in no climb or descent
+        float dt = (now - target_altitude.last_elev_check_us) * 1.0e-6;
+        dt = constrain_float(dt, 0.1, 0.15);
+        target_altitude.last_elev_check_us = now;
+        
+        // Roll angle control
+        nav_roll_cd  = channel_roll->norm_input() * roll_limit_cd;
+
+        // Pitch angle control
+        float pitch_input = channel_pitch->norm_input();
+        if (pitch_input > 0)
+            nav_pitch_cd = pitch_input * aparm.pitch_limit_max*100;
+        else
+            nav_pitch_cd = -(pitch_input * aparm.pitch_limit_min*100);
+        
+        // Yaw/yawrate control
+        // User must have assigned the nav_yaw_cd at least once (in control_mode->enter()) before entering this block
+        float yaw_rate_input = channel_rudder->norm_input();
+        if (fabsf(yaw_rate_input) > 0.02f) {
+            // Use yaw rate control following rudder input
+            nav_yaw_rate = yaw_rate_input * yawController.max_rate();
+            use_yaw_rate_control = true;
+        } else if (use_yaw_rate_control) {
+            // Let the vehicle control its yaw rate until it slow down enough, then we take the heading and hold
+            nav_yaw_rate = 0;
+
+            float current_rate = degrees(ahrs.get_gyro().z);
+            if (fabsf(current_rate) < 10.0) {
+                nav_yaw_cd = ahrs.yaw_sensor + (int32_t)(current_rate * 1.0);   // Project heading forward by 1s
+                use_yaw_rate_control = false;
+            }
+        }
+
+        // Speed control
+        if (control_speed) {
+            // Airspeed max var actually refers to max allowable speed of the vehicle
+            // Retain variable name for convenience
+            target_speed_ms = channel_throttle->norm_input() * aparm.airspeed_max;
+        }   // else, the throttle follow throttle channel input, handled in set_throttle() in servos.cpp
+    }
+
+    if (control_speed) {
+        calc_throttle();    // Compute necessary throttle based on target speed
+    }
+
+    if (plane.failsafe.rc_failsafe && plane.g.fs_action_short == FS_ACTION_SHORT_FBWA) {
+        // FBWA failsafe glide
+        plane.nav_roll_cd = 0;
+        plane.nav_pitch_cd = 0;
+        SRV_Channels::set_output_limit(SRV_Channel::k_throttle, SRV_Channel::Limit::MIN);
+    }
+}
+
 /*
   handle speed and height control in FBWB, CRUISE, and optionally, LOITER mode.
   In this mode the elevator is used to change target altitude. The
@@ -255,6 +314,8 @@ void Plane::update_fbwb_speed_height(void)
 #endif
 
         target_altitude.last_elevator_input = elevator_input;
+
+        target_speed_ms = channel_throttle->norm_input() * aparm.airspeed_max;
     }
 
     check_fbwb_altitude();

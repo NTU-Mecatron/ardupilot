@@ -641,6 +641,12 @@ private:
 
     // Desired yaw rate (deg/s)
     float nav_yaw_rate;
+
+    // Desired yaw angle (centidegrees)
+    int32_t nav_yaw_cd;
+
+    // Use to select between controlling using yaw rate or yaw angle
+    bool use_yaw_rate_control = true;
     
     // Desired forward speed in body frame (m/s)
     float target_speed_ms;
@@ -1068,7 +1074,10 @@ private:
     void calc_gndspeed_undershoot();
     void update_loiter(uint16_t radius);
     void update_loiter_update_nav(uint16_t radius);
-    void update_cruise();
+    void update_fbw(bool control_speed, bool control_altitude, bool hold_course);
+    void update_fbwa() { update_fbw(false, false, false); }
+    void update_fbwb() { update_fbw(true, true, false); }
+    void update_cruise() { update_fbw(true, true, true); }
     void update_fbwb_speed_height(void);
     void setup_turn_angle(void);
     bool reached_loiter_target(void);
