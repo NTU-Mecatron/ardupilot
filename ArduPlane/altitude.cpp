@@ -27,6 +27,11 @@
 void Plane::adjust_altitude_target()
 {
     control_mode->update_target_altitude();
+    if (plane.target_altitude.amsl_cm > 100.0f) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Target altitude %f is too high, resetting to max 1.0m", plane.target_altitude.amsl_cm * 0.01f);
+        plane.target_altitude.amsl_cm = 99.9f;
+    }
+    plane.altitude_error_cm = plane.calc_altitude_error_cm();
 }
 
 void Plane::check_home_alt_change(void)
@@ -208,9 +213,9 @@ void Plane::set_target_altitude_current_adjusted(void)
 void Plane::set_target_altitude_location(const Location &loc)
 {
     target_altitude.amsl_cm = loc.alt;
-    if (loc.relative_alt) {
-        target_altitude.amsl_cm += home.alt;
-    }
+    // if (loc.relative_alt) {
+    //     target_altitude.amsl_cm += home.alt;
+    // }
 #if AP_TERRAIN_AVAILABLE
     if (target_altitude.terrain_following_pending) {
         /* we didn't get terrain data to init when we started on this
