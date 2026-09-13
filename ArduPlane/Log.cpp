@@ -148,7 +148,7 @@ void Plane::Log_Write_Nav_Tuning()
         time_us             : AP_HAL::micros64(),
         wp_distance         : auto_state.wp_distance,
         target_bearing_cd   : (int16_t)nav_controller->target_bearing_cd(),
-        nav_bearing_cd      : (int16_t)nav_controller->nav_bearing_cd(),
+        nav_bearing_cd      : (int16_t)nav_yaw_cd,
         target_alt_cm       : target_altitude.amsl_cm,
         alt_cm              : adjusted_altitude_cm(),
         xtrack_error        : nav_controller->crosstrack_error(),
