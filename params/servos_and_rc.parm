@@ -10,6 +10,9 @@ THR_FAILSAFE     0
 LOG_BITMASK      8241
 LOG_FILE_DSRMROT 1
 
+# Disable stick mixing
+STICK_MIXING     0
+
 # Changing any of these fins configs requires reboot to take effect
 # Fins mixing config (0-plus, 1-X, 2-plus-w-canards, 3-x-w-canards)
 FINS_CONFIG      3

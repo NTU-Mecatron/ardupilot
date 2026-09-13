@@ -10,11 +10,11 @@ SPEED_MAX        8.00
 SPEED_MIN        1.00
 
 # Speed (m/s) to throttle (-1.0 to 1.0) PID
-SPD_CTRL_P       0.0
-SPD_CTRL_I       0.0
+SPD_CTRL_P       0.15
+SPD_CTRL_I       0.008
 SPD_CTRL_D       0.00
 SPD_CTRL_IMAX    0.20
-SPD_CTRL_FF      0.065
+SPD_CTRL_FF      0.05
 
 SPD_CTRL_D_FF    0.00
 SPD_CTRL_FLTD    5.00

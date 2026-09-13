@@ -4,23 +4,21 @@ PTCH_LIM_MIN_DEG -20.000000
 
 # PI controller: altitude -> pitch
 # BUOYANCY_FF: Pitch down angle (degrees) to counteract buoyancy at typical operating speed (SCALING_SPEED)
-ALT_CTRL_P       0.175000
-ALT_CTRL_I       0.025000
-ALT_CTRL_IMAX    0.175000
-ALT_BUOYANCY_FF  5.000000
+ALT_CTRL_P       0.1500
+ALT_CTRL_I       0.00500
+ALT_CTRL_IMAX    0.07000
+ALT_BUOYANCY_FF  0.000000
 
 # P controller: pitch_rate = pitch_error / tconst
 PTCH_TCONST      1.00000
 PTCH_MAX_RATE    20
 
 # Pitch rate to elevator PID
-# Note that: elevator = pid.update(desired_rate * speed_scaler**2, current_rate * speed_scaler**2, dt)
-# Rudder and rates are all in radians, so all params below, when estimated, should use radians in calculations as well
-PTCH_RATE_P      0.300000
-PTCH_RATE_I      0.030000
+PTCH_RATE_P      1.00000
+PTCH_RATE_I      0.10000
 PTCH_RATE_D      0.000000
 PTCH_RATE_IMAX   0.150000
-PTCH_RATE_FF     2.5
+PTCH_RATE_FF     4.0
 
 PTCH_RATE_D_FF   0.000000
 PTCH_RATE_FLTD   4.000000
