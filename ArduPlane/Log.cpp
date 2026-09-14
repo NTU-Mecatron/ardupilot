@@ -8,7 +8,7 @@ void Plane::Log_Write_Attitude(void)
     Vector3f targets;       // Package up the targets into a vector for commonality with Copter usage of Log_Wrote_Attitude
     targets.x = nav_roll_cd;
     targets.y = nav_pitch_cd;
-    targets.z = nav_yaw_rate; // Abit strange, but it is what it is for now
+    targets.z = wrap_360_cd(nav_yaw_cd);
 
 #if HAL_QUADPLANE_ENABLED
     if (quadplane.show_vtol_view()) {
@@ -148,7 +148,7 @@ void Plane::Log_Write_Nav_Tuning()
         time_us             : AP_HAL::micros64(),
         wp_distance         : auto_state.wp_distance,
         target_bearing_cd   : (int16_t)nav_controller->target_bearing_cd(),
-        nav_bearing_cd      : (int16_t)nav_yaw_cd,
+        nav_bearing_cd      : (int16_t)(nav_yaw_cd > 0 ? nav_yaw_cd : nav_yaw_cd + 36000),
         target_alt_cm       : target_altitude.amsl_cm,
         alt_cm              : adjusted_altitude_cm(),
         xtrack_error        : nav_controller->crosstrack_error(),
