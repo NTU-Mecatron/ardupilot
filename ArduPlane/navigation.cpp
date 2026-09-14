@@ -243,7 +243,9 @@ void Plane::update_fbw(bool control_speed, bool control_altitude, bool hold_cour
 
             float current_rate = degrees(ahrs.get_gyro().z);
             if (fabsf(current_rate) < 10.0) {
-                nav_yaw_cd = ahrs.yaw_sensor + (int32_t)(current_rate * 1.0);   // Project heading forward by 1s
+                // Project heading forward by time constant (convert degrees/sec to centidegrees/sec)
+                int32_t projected_change_cd = (int32_t)(current_rate * 100.0f * yawController.tau());
+                nav_yaw_cd = wrap_180_cd(ahrs.yaw_sensor + projected_change_cd);
                 use_yaw_rate_control = false;
             }
         }
