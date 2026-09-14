@@ -532,8 +532,6 @@ public:
     // methods that affect movement of the vehicle in this mode
     void update() override;
 
-    void navigate() override;
-
     bool get_target_heading_cd(int32_t &target_heading) const;
 
     bool does_auto_throttle() const override { return true; }

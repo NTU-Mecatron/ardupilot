@@ -225,25 +225,19 @@ void Plane::update_fbw(bool control_speed, bool control_altitude, bool hold_cour
 
         // Alt/pitch control
         float pitch_input = channel_pitch->norm_input();
-        // This nav_pitch_cd will be overriden (outside of the if statement, see below) if we are controlling altitude for pitch
-        if (pitch_input > 0) {
-            nav_pitch_cd = pitch_input * aparm.pitch_limit_max*100;
-        }
-        else {
-            nav_pitch_cd = -(pitch_input * aparm.pitch_limit_min*100);   
-        }
-
         if (fabsf(pitch_input) > 0.02f) {
-            use_altitude_control_for_pitch = false;            
-        } else if (control_altitude && !use_altitude_control_for_pitch) {
+            // Use manual pitch input to set nav_pitch_cd up to set limits
+            nav_pitch_cd = (pitch_input > 0) ? (pitch_input * aparm.pitch_limit_max*100) : -(pitch_input * aparm.pitch_limit_min*100);
+            fbw_state.have_pitch_input = true;            
+        } else if (fbw_state.have_pitch_input) {
             // Let the vehicle stabilize its pitch before applying altitude control
             nav_pitch_cd = 0;
             
             int32_t current_pitch_cd = wrap_180_cd(ahrs.pitch_sensor);
-            if (abs(current_pitch_cd) < 500) {
+            if (abs(current_pitch_cd) < 100) {
                 set_target_altitude_current();
                 gcs().send_text(MAV_SEVERITY_INFO, "Mode FBW: Target altitude set to %f", target_altitude.amsl_cm * 0.01f);
-                use_altitude_control_for_pitch = true;
+                fbw_state.have_pitch_input = false;
             }
         }
         
@@ -253,8 +247,8 @@ void Plane::update_fbw(bool control_speed, bool control_altitude, bool hold_cour
         if (fabsf(yaw_rate_input) > 0.02f) {
             // Use yaw rate control following rudder input
             nav_yaw_rate = yaw_rate_input * yawController.max_rate();
-            use_yaw_rate_control = true;
-        } else if (use_yaw_rate_control) {
+            fbw_state.have_yaw_rate_input = true;
+        } else if (fbw_state.have_yaw_rate_input) {
             // Let the vehicle control its yaw rate until it slow down enough, then we take the heading and hold
             nav_yaw_rate = 0;
 
@@ -263,8 +257,14 @@ void Plane::update_fbw(bool control_speed, bool control_altitude, bool hold_cour
                 // Project heading forward by time constant (convert degrees/sec to centidegrees/sec)
                 int32_t projected_change_cd = (int32_t)(current_rate * 100.0f * yawController.tau());
                 nav_yaw_cd = wrap_180_cd(ahrs.yaw_sensor + projected_change_cd);
-                use_yaw_rate_control = false;
+                fbw_state.have_yaw_rate_input = false;
             }
+        }
+        if (hold_course && !fbw_state.have_yaw_rate_input) {
+            next_WP_loc = prev_WP_loc;
+            // always look 100m ahead
+            next_WP_loc.offset_bearing(nav_yaw_cd*0.01f, prev_WP_loc.get_distance(current_loc) + 100);
+            nav_controller->update_waypoint(prev_WP_loc, next_WP_loc);
         }
 
         // Speed control
@@ -279,8 +279,12 @@ void Plane::update_fbw(bool control_speed, bool control_altitude, bool hold_cour
         calc_throttle();    // Compute necessary throttle based on target speed
     }
 
-    if (control_altitude && use_altitude_control_for_pitch) {
-        calc_nav_pitch();
+    if (control_altitude && !fbw_state.have_pitch_input) {
+        calc_nav_pitch();   // Compute nav_pitch_cd from altitude controller
+    }
+
+    if (hold_course && !fbw_state.have_yaw_rate_input) {
+        calc_nav_yaw_rate();
     }
 
     if (plane.failsafe.rc_failsafe && plane.g.fs_action_short == FS_ACTION_SHORT_FBWA) {

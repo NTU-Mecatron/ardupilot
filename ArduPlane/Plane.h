@@ -450,6 +450,14 @@ private:
         uint32_t last_steer_ms;
     } steer_state;
 
+    struct {
+        // Flag indicating if channel pitch is active; used to discern if we want to command pitch from rc (true) or from altitude (false)
+        bool have_pitch_input = false;
+
+        // Flag indicating if channel yaw rate is active; used to discern if we want to command yaw rate from rc (true) or from holding heading/course (false)
+        bool have_yaw_rate_input = false;
+    } fbw_state;
+
     // flight mode specific
     struct {
         // Altitude threshold to complete a takeoff command in autonomous
@@ -644,12 +652,6 @@ private:
 
     // Desired yaw angle (centidegrees)
     int32_t nav_yaw_cd;
-
-    // Use to select between controlling using yaw rate or yaw angle
-    bool use_yaw_rate_control = true;
-
-    // Use to select between controlling using pitch angle or altitude target
-    bool use_altitude_control_for_pitch = true;
     
     // Desired forward speed in body frame (m/s)
     float target_speed_ms;
