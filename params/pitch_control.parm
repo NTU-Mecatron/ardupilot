@@ -5,7 +5,7 @@ PTCH_LIM_MIN_DEG -20.000000
 # PI controller: altitude -> pitch
 # BUOYANCY_FF: Pitch down angle (degrees) to counteract buoyancy at typical operating speed (SCALING_SPEED)
 ALT_CTRL_P       0.1500
-ALT_CTRL_I       0.00500
+ALT_CTRL_I       0.00800
 ALT_CTRL_IMAX    0.07000
 ALT_BUOYANCY_FF  0.000000
 
@@ -14,11 +14,11 @@ PTCH_TCONST      1.0000
 PTCH_MAX_RATE    20
 
 # Pitch rate to elevator PID
-PTCH_RATE_P      3.00000
+PTCH_RATE_P      4.00000
 PTCH_RATE_I      0.050000
 PTCH_RATE_D      0.000000
 PTCH_RATE_IMAX   0.110000
-PTCH_RATE_FF     4.0
+PTCH_RATE_FF     3.0
 
 PTCH_RATE_D_FF   0.000000
 PTCH_RATE_FLTD   5.000000
