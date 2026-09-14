@@ -223,12 +223,29 @@ void Plane::update_fbw(bool control_speed, bool control_altitude, bool hold_cour
         // Roll angle control
         nav_roll_cd  = channel_roll->norm_input() * roll_limit_cd;
 
-        // Pitch angle control
+        // Alt/pitch control
         float pitch_input = channel_pitch->norm_input();
-        if (pitch_input > 0)
+        // This nav_pitch_cd will be overriden (outside of the if statement, see below) if we are controlling altitude for pitch
+        if (pitch_input > 0) {
             nav_pitch_cd = pitch_input * aparm.pitch_limit_max*100;
-        else
-            nav_pitch_cd = -(pitch_input * aparm.pitch_limit_min*100);
+        }
+        else {
+            nav_pitch_cd = -(pitch_input * aparm.pitch_limit_min*100);   
+        }
+
+        if (fabsf(pitch_input) > 0.02f) {
+            use_altitude_control_for_pitch = false;            
+        } else if (control_altitude && !use_altitude_control_for_pitch) {
+            // Let the vehicle stabilize its pitch before applying altitude control
+            nav_pitch_cd = 0;
+            
+            int32_t current_pitch_cd = wrap_180_cd(ahrs.pitch_sensor);
+            if (abs(current_pitch_cd) < 500) {
+                set_target_altitude_current();
+                gcs().send_text(MAV_SEVERITY_INFO, "Mode FBW: Target altitude set to %f", target_altitude.amsl_cm * 0.01f);
+                use_altitude_control_for_pitch = true;
+            }
+        }
         
         // Yaw/yawrate control
         // User must have assigned the nav_yaw_cd at least once (in control_mode->enter()) before entering this block
@@ -260,6 +277,10 @@ void Plane::update_fbw(bool control_speed, bool control_altitude, bool hold_cour
 
     if (control_speed) {
         calc_throttle();    // Compute necessary throttle based on target speed
+    }
+
+    if (control_altitude && use_altitude_control_for_pitch) {
+        calc_nav_pitch();
     }
 
     if (plane.failsafe.rc_failsafe && plane.g.fs_action_short == FS_ACTION_SHORT_FBWA) {

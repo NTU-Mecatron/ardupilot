@@ -57,6 +57,9 @@ bool Mode::enter()
     // Set current heading
     plane.nav_yaw_cd = ahrs.yaw_sensor;
 
+    // Set current target altitude
+    plane.set_target_altitude_current();
+
 #if OFFBOARD_GUIDED == ENABLED
     plane.guided_state.target_heading = -4; // radians here are in range -3.14 to 3.14, so a default value needs to be outside that range
     plane.guided_state.target_heading_type = GUIDED_HEADING_NONE;

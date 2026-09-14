@@ -647,6 +647,9 @@ private:
 
     // Use to select between controlling using yaw rate or yaw angle
     bool use_yaw_rate_control = true;
+
+    // Use to select between controlling using pitch angle or altitude target
+    bool use_altitude_control_for_pitch = true;
     
     // Desired forward speed in body frame (m/s)
     float target_speed_ms;

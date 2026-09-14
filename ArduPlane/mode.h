@@ -515,10 +515,6 @@ public:
     bool mode_allows_autotuning() const override { return true; }
 
     void update_target_altitude() override {};
-
-protected:
-
-    bool _enter() override;
 };
 
 class ModeCruise : public Mode
