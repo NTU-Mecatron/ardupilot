@@ -540,8 +540,6 @@ public:
 
 protected:
 
-    bool _enter() override;
-
     bool locked_heading;
     int32_t locked_heading_cd;
     uint32_t lock_timer_ms;
