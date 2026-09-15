@@ -155,19 +155,8 @@ void Plane::stabilize_yaw()
     if (control_mode == &mode_stabilize && rudder_input() != 0) {
         disable_integrator = true;
     }
-    const float speed_scaler = get_speed_scaler();  
-    float rudder_out = 0.0f;
-    if (speed_scaler >= 1e-2f) {
-        if ((control_mode == &mode_fbwa ||
-            control_mode == &mode_fbwb) && !fbw_state.have_yaw_rate_input) {
-            int32_t target_yaw_cd = wrap_180_cd(nav_yaw_cd);
-            int32_t heading_error = target_yaw_cd - wrap_180_cd(ahrs.yaw_sensor);
-            heading_error = wrap_180_cd(heading_error);
-            rudder_out = yawController.get_servo_out(heading_error, speed_scaler, disable_integrator);
-        } else {
-            rudder_out = yawController.get_rate_out(nav_yaw_rate, speed_scaler, disable_integrator);
-        }
-    }
+    const float speed_scaler = get_speed_scaler();
+    const float rudder_out = (speed_scaler >= 1e-2f) ? yawController.get_rate_out(nav_yaw_rate, speed_scaler, disable_integrator) : 0.0f;
     SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, rudder_out);
 }
 

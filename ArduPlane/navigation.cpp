@@ -260,11 +260,15 @@ void Plane::update_fbw(bool control_speed, bool control_altitude, bool hold_cour
                 fbw_state.have_yaw_rate_input = false;
             }
         }
-        if (hold_course && !fbw_state.have_yaw_rate_input) {
-            next_WP_loc = prev_WP_loc;
-            // always look 100m ahead
-            next_WP_loc.offset_bearing(nav_yaw_cd*0.01f, prev_WP_loc.get_distance(current_loc) + 100);
-            nav_controller->update_waypoint(prev_WP_loc, next_WP_loc);
+        if (!fbw_state.have_yaw_rate_input) {
+            if (hold_course) {
+                next_WP_loc = prev_WP_loc;
+                // always look 100m ahead
+                next_WP_loc.offset_bearing(nav_yaw_cd*0.01f, prev_WP_loc.get_distance(current_loc) + 100);
+                nav_controller->update_waypoint(prev_WP_loc, next_WP_loc);
+            } else {
+                nav_controller->update_heading_hold(nav_yaw_cd);
+            }
         }
 
         // Speed control
@@ -283,7 +287,7 @@ void Plane::update_fbw(bool control_speed, bool control_altitude, bool hold_cour
         calc_nav_pitch();   // Compute nav_pitch_cd from altitude controller
     }
 
-    if (hold_course && !fbw_state.have_yaw_rate_input) {
+    if (!fbw_state.have_yaw_rate_input) {
         calc_nav_yaw_rate();
     }
 
