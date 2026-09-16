@@ -450,6 +450,14 @@ private:
         uint32_t last_steer_ms;
     } steer_state;
 
+    struct {
+        // Flag indicating if channel pitch is active; used to discern if we want to command pitch from rc (true) or from altitude (false)
+        bool have_pitch_input = false;
+
+        // Flag indicating if channel yaw rate is active; used to discern if we want to command yaw rate from rc (true) or from holding heading/course (false)
+        bool have_yaw_rate_input = false;
+    } fbw_state;
+
     // flight mode specific
     struct {
         // Altitude threshold to complete a takeoff command in autonomous
@@ -641,6 +649,9 @@ private:
 
     // Desired yaw rate (deg/s)
     float nav_yaw_rate;
+
+    // Desired yaw angle (centidegrees)
+    int32_t nav_yaw_cd;
     
     // Desired forward speed in body frame (m/s)
     float target_speed_ms;
@@ -1068,8 +1079,10 @@ private:
     void calc_gndspeed_undershoot();
     void update_loiter(uint16_t radius);
     void update_loiter_update_nav(uint16_t radius);
-    void update_cruise();
-    void update_fbwb_speed_height(void);
+    void update_fbw(bool control_speed, bool control_altitude, bool hold_course);
+    void update_fbwa() { update_fbw(false, false, false); }
+    void update_fbwb() { update_fbw(true, true, false); }
+    void update_cruise() { update_fbw(true, true, true); }
     void setup_turn_angle(void);
     bool reached_loiter_target(void);
 

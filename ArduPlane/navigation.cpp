@@ -209,60 +209,95 @@ void Plane::update_loiter(uint16_t radius)
     }
 }
 
-/*
-  handle speed and height control in FBWB, CRUISE, and optionally, LOITER mode.
-  In this mode the elevator is used to change target altitude. The
-  throttle is used to change target airspeed or throttle
- */
-void Plane::update_fbwb_speed_height(void)
+void Plane::update_fbw(bool control_speed, bool control_altitude, bool hold_course)
 {
     uint32_t now = micros();
-    if (now - target_altitude.last_elev_check_us >= 100000) {
+    if (now - target_altitude.last_elev_check_us >= 100000)
+    {
         // we don't run this on every loop as it would give too small granularity on quadplanes at 300Hz, and
         // give below 1cm altitude change, which would result in no climb or descent
         float dt = (now - target_altitude.last_elev_check_us) * 1.0e-6;
         dt = constrain_float(dt, 0.1, 0.15);
-
         target_altitude.last_elev_check_us = now;
+        
+        // Roll angle control
+        nav_roll_cd  = channel_roll->norm_input() * roll_limit_cd;
 
-        float elevator_input = channel_pitch->get_control_in() * (1/4500.0);
-
-        if (g.flybywire_elev_reverse) {
-            elevator_input = -elevator_input;
-        }
-
-        bool input_stop_climb = !is_positive(elevator_input) && is_positive(target_altitude.last_elevator_input);
-        bool input_stop_descent = !is_negative(elevator_input) && is_negative(target_altitude.last_elevator_input);
-        if (input_stop_climb || input_stop_descent) {
-            // user elevator input reached or passed zero, lock in the current altitude
-            set_target_altitude_current();
-        }
-
-        int32_t alt_change_cm = g.flybywire_climb_rate * elevator_input * dt * 100;
-        change_target_altitude(alt_change_cm);
-
-#if HAL_SOARING_ENABLED
-        if (g2.soaring_controller.is_active()) {
-            if (g2.soaring_controller.get_throttle_suppressed()) {
-                // we're in soaring mode with throttle suppressed
+        // Alt/pitch control
+        float pitch_input = channel_pitch->norm_input();
+        if (fabsf(pitch_input) > 0.02f) {
+            // Use manual pitch input to set nav_pitch_cd up to set limits
+            nav_pitch_cd = (pitch_input > 0) ? (pitch_input * aparm.pitch_limit_max*100) : -(pitch_input * aparm.pitch_limit_min*100);
+            fbw_state.have_pitch_input = true;            
+        } else if (fbw_state.have_pitch_input) {
+            // Let the vehicle stabilize its pitch before applying altitude control
+            nav_pitch_cd = 0;
+            
+            int32_t current_pitch_cd = wrap_180_cd(ahrs.pitch_sensor);
+            if (abs(current_pitch_cd) < 100) {
                 set_target_altitude_current();
-            } else {
-                // we're in soaring mode climbing back to altitude. Set target to SOAR_ALT_CUTOFF plus 10m to ensure we positively climb
-                // through SOAR_ALT_CUTOFF, thus triggering throttle suppression and return to glide.
-                target_altitude.amsl_cm = 100*plane.g2.soaring_controller.get_alt_cutoff() + 1000 + AP::ahrs().get_home().alt;
+                gcs().send_text(MAV_SEVERITY_INFO, "Mode FBW: Target altitude set to %f", target_altitude.amsl_cm * 0.01f);
+                fbw_state.have_pitch_input = false;
             }
         }
-#endif
+        
+        // Yaw/yawrate control
+        // User must have assigned the nav_yaw_cd at least once (in control_mode->enter()) before entering this block
+        float yaw_rate_input = channel_rudder->norm_input();
+        if (fabsf(yaw_rate_input) > 0.02f) {
+            // Use yaw rate control following rudder input
+            nav_yaw_rate = yaw_rate_input * yawController.max_rate();
+            fbw_state.have_yaw_rate_input = true;
+        } else if (fbw_state.have_yaw_rate_input) {
+            // Let the vehicle control its yaw rate until it slow down enough, then we take the heading and hold
+            nav_yaw_rate = 0;
 
-        target_altitude.last_elevator_input = elevator_input;
+            float current_rate = degrees(ahrs.get_gyro().z);
+            if (fabsf(current_rate) < 10.0) {
+                // Project heading forward by time constant (convert degrees/sec to centidegrees/sec)
+                int32_t projected_change_cd = (int32_t)(current_rate * 100.0f * yawController.tau());
+                nav_yaw_cd = wrap_180_cd(ahrs.yaw_sensor + projected_change_cd);
+                prev_WP_loc = current_loc;
+                fbw_state.have_yaw_rate_input = false;
+            }
+        }
+        if (!fbw_state.have_yaw_rate_input) {
+            if (hold_course) {
+                next_WP_loc = prev_WP_loc;
+                // always look 100m ahead
+                next_WP_loc.offset_bearing(nav_yaw_cd*0.01f, prev_WP_loc.get_distance(current_loc) + 1000);
+                nav_controller->update_waypoint(prev_WP_loc, next_WP_loc);
+            } else {
+                nav_controller->update_heading_hold(nav_yaw_cd);
+            }
+        }
+
+        // Speed control
+        if (control_speed) {
+            // Airspeed max var actually refers to max allowable speed of the vehicle
+            // Retain variable name for convenience
+            target_speed_ms = channel_throttle->norm_input() * aparm.airspeed_max;
+        }   // else, the throttle follow throttle channel input, handled in set_throttle() in servos.cpp
     }
 
-    check_fbwb_altitude();
+    if (control_speed) {
+        calc_throttle();    // Compute necessary throttle based on target speed
+    }
 
-    altitude_error_cm = calc_altitude_error_cm();
+    if (control_altitude && !fbw_state.have_pitch_input) {
+        calc_nav_pitch();   // Compute nav_pitch_cd from altitude controller
+    }
 
-    calc_throttle();
-    calc_nav_pitch();
+    if (!fbw_state.have_yaw_rate_input) {
+        calc_nav_yaw_rate();
+    }
+
+    if (plane.failsafe.rc_failsafe && plane.g.fs_action_short == FS_ACTION_SHORT_FBWA) {
+        // FBWA failsafe glide
+        plane.nav_roll_cd = 0;
+        plane.nav_pitch_cd = 0;
+        SRV_Channels::set_output_limit(SRV_Channel::k_throttle, SRV_Channel::Limit::MIN);
+    }
 }
 
 /*

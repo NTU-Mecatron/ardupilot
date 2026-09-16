@@ -515,10 +515,6 @@ public:
     bool mode_allows_autotuning() const override { return true; }
 
     void update_target_altitude() override {};
-
-protected:
-
-    bool _enter() override;
 };
 
 class ModeCruise : public Mode
@@ -536,21 +532,11 @@ public:
     // methods that affect movement of the vehicle in this mode
     void update() override;
 
-    void navigate() override;
-
     bool get_target_heading_cd(int32_t &target_heading) const;
 
     bool does_auto_throttle() const override { return true; }
 
     void update_target_altitude() override {};
-
-protected:
-
-    bool _enter() override;
-
-    bool locked_heading;
-    int32_t locked_heading_cd;
-    uint32_t lock_timer_ms;
 };
 
 #if HAL_ADSB_ENABLED

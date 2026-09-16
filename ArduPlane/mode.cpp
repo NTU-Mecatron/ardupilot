@@ -54,6 +54,12 @@ bool Mode::enter()
     plane.guided_state.last_forced_rpy_ms.zero();
     plane.guided_state.last_forced_throttle_ms = 0;
 
+    // Set current heading
+    plane.nav_yaw_cd = ahrs.yaw_sensor;
+
+    // Set current target altitude
+    plane.set_target_altitude_current();
+
 #if OFFBOARD_GUIDED == ENABLED
     plane.guided_state.target_heading = -4; // radians here are in range -3.14 to 3.14, so a default value needs to be outside that range
     plane.guided_state.target_heading_type = GUIDED_HEADING_NONE;
@@ -158,7 +164,6 @@ bool Mode::is_vtol_man_throttle() const
 void Mode::update_target_altitude()
 {
     plane.set_target_altitude_location(plane.next_WP_loc);
-    plane.altitude_error_cm = plane.calc_altitude_error_cm();
 }
 
 // returns true if the vehicle can be armed in this mode
