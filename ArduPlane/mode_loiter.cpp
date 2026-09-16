@@ -22,7 +22,7 @@ void ModeLoiter::update()
 {
     plane.calc_nav_roll();
     if (plane.stick_mixing_enabled() && plane.flight_option_enabled(FlightOptions::ENABLE_LOITER_ALT_CONTROL)) {
-        plane.update_fbwb_speed_height();
+        // plane.update_fbwb_speed_height();
     } else {
         plane.calc_nav_pitch();
         plane.calc_throttle();

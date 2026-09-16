@@ -301,64 +301,6 @@ void Plane::update_fbw(bool control_speed, bool control_altitude, bool hold_cour
 }
 
 /*
-  handle speed and height control in FBWB, CRUISE, and optionally, LOITER mode.
-  In this mode the elevator is used to change target altitude. The
-  throttle is used to change target airspeed or throttle
- */
-void Plane::update_fbwb_speed_height(void)
-{
-    uint32_t now = micros();
-    if (now - target_altitude.last_elev_check_us >= 100000) {
-        // we don't run this on every loop as it would give too small granularity on quadplanes at 300Hz, and
-        // give below 1cm altitude change, which would result in no climb or descent
-        float dt = (now - target_altitude.last_elev_check_us) * 1.0e-6;
-        dt = constrain_float(dt, 0.1, 0.15);
-
-        target_altitude.last_elev_check_us = now;
-
-        float elevator_input = channel_pitch->get_control_in() * (1/4500.0);
-
-        if (g.flybywire_elev_reverse) {
-            elevator_input = -elevator_input;
-        }
-
-        bool input_stop_climb = !is_positive(elevator_input) && is_positive(target_altitude.last_elevator_input);
-        bool input_stop_descent = !is_negative(elevator_input) && is_negative(target_altitude.last_elevator_input);
-        if (input_stop_climb || input_stop_descent) {
-            // user elevator input reached or passed zero, lock in the current altitude
-            set_target_altitude_current();
-        }
-
-        int32_t alt_change_cm = g.flybywire_climb_rate * elevator_input * dt * 100;
-        change_target_altitude(alt_change_cm);
-
-#if HAL_SOARING_ENABLED
-        if (g2.soaring_controller.is_active()) {
-            if (g2.soaring_controller.get_throttle_suppressed()) {
-                // we're in soaring mode with throttle suppressed
-                set_target_altitude_current();
-            } else {
-                // we're in soaring mode climbing back to altitude. Set target to SOAR_ALT_CUTOFF plus 10m to ensure we positively climb
-                // through SOAR_ALT_CUTOFF, thus triggering throttle suppression and return to glide.
-                target_altitude.amsl_cm = 100*plane.g2.soaring_controller.get_alt_cutoff() + 1000 + AP::ahrs().get_home().alt;
-            }
-        }
-#endif
-
-        target_altitude.last_elevator_input = elevator_input;
-
-        target_speed_ms = channel_throttle->norm_input() * aparm.airspeed_max;
-    }
-
-    check_fbwb_altitude();
-
-    altitude_error_cm = calc_altitude_error_cm();
-
-    calc_throttle();
-    calc_nav_pitch();
-}
-
-/*
   calculate the turn angle for the next leg of the mission
  */
 void Plane::setup_turn_angle(void)

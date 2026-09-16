@@ -1083,7 +1083,6 @@ private:
     void update_fbwa() { update_fbw(false, false, false); }
     void update_fbwb() { update_fbw(true, true, false); }
     void update_cruise() { update_fbw(true, true, true); }
-    void update_fbwb_speed_height(void);
     void setup_turn_angle(void);
     bool reached_loiter_target(void);
 

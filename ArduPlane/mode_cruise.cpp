@@ -8,6 +8,6 @@ void ModeCruise::update()
 
 bool ModeCruise::get_target_heading_cd(int32_t &target_heading) const
 {
-    target_heading = locked_heading_cd;
-    return locked_heading;
+    target_heading = plane.nav_yaw_cd;
+    return !plane.fbw_state.have_yaw_rate_input;
 }

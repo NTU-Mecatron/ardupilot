@@ -537,12 +537,6 @@ public:
     bool does_auto_throttle() const override { return true; }
 
     void update_target_altitude() override {};
-
-protected:
-
-    bool locked_heading;
-    int32_t locked_heading_cd;
-    uint32_t lock_timer_ms;
 };
 
 #if HAL_ADSB_ENABLED
