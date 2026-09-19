@@ -1,0 +1,17 @@
+# Used to disable gps and take in external navigation
+# Remember to reboot
+
+SIM_GPS_DISABLE     1
+
+EK2_ENABLE          0
+EK3_ENABLE          1
+AHRS_EKF_TYPE       3
+
+EK3_SRC1_POSXY      6
+EK3_SRC1_VELXY      6
+EK3_SRC1_POSZ       1
+EK3_SRC1_VELZ       0
+EK3_SRC1_YAW        6
+EK3_SRC_OPTIONS     0
+
+VISO_TYPE           1
