@@ -758,10 +758,6 @@ public:
 
     void navigate() override;
 
-    void run() override;
-
-    bool allows_throttle_nudging() const override { return true; }
-
     bool does_auto_navigation() const override { return true; }
 
     bool does_auto_throttle() const override { return true; }

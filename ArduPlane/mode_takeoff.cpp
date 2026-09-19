@@ -65,12 +65,9 @@ bool ModeTakeoff::_enter()
     // Set target speed
     plane.target_speed_ms = takeoff_speed;
 
-    // Set target altitude
-    plane.next_WP_loc = plane.current_loc;
-    plane.next_WP_loc.alt += target_alt*100.0;
-
-    // Save prev waypoint
+    // Save prev and next waypoints
     plane.prev_WP_loc = plane.current_loc;
+    plane.next_WP_loc = plane.current_loc;
 
     initial_heading_cd = wrap_360_cd(plane.ahrs.yaw_sensor);
 
@@ -81,48 +78,8 @@ void ModeTakeoff::update()
 {
     // Always calculate throttle to achieve given speed
     plane.calc_throttle();
-
-    // If we are too slow, pitch and yaw will be heavily affected by waves so it is better to hardcode elevator and rudder
-    if (plane.get_forward_speed() < takeoff_speed * 0.9) 
-    {
-        SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, surface_elevator * 100);
-        SRV_Channels::set_output_scaled(SRV_Channel::k_rudder, 0.0);
-    }
-    else    // Run inner PID loops as per usual
-    {
-        plane.calc_nav_pitch();
-        plane.calc_nav_yaw_rate();
-
-        if (!has_logged_reached_takeoff_speed) {
-            has_logged_reached_takeoff_speed = true;
-            const float tkoff_speed = takeoff_speed;
-            gcs().send_text(MAV_SEVERITY_INFO, "Reached takeoff speed of %.1f", tkoff_speed);
-        }
-    }
-
-    // Check if reached target alt (which should be a negative number)
-    const float altitude = plane.adjusted_altitude_cm() * 0.01f;
-    if (-altitude <= -target_alt && !has_logged_reached_target_alt) {
-        plane.set_flight_stage(AP_FixedWing::FlightStage::TAKEOFF);
-    } else {
-        plane.set_flight_stage(AP_FixedWing::FlightStage::NORMAL);
-        if (!has_logged_reached_target_alt) {
-            has_logged_reached_target_alt = true;
-            gcs().send_text(MAV_SEVERITY_INFO, "Current alt %.1f m, Reached target altitude of %.1f m", altitude, target_alt.get());
-            if (!takeoff_in_circle)
-                plane.next_WP_loc = plane.current_loc;  // For loitering around current spot
-        }
-    }
-}
-
-void ModeTakeoff::run()
-{
-    // When not enough speed, let the update() method handle hardcode control of elevator and rudder
-    if (plane.get_forward_speed() >= takeoff_speed * 0.9)
-    {
-        // Normal flight, run base class
-        Mode::run();
-    }
+    plane.calc_nav_pitch();
+    plane.calc_nav_yaw_rate();    
 }
 
 void ModeTakeoff::navigate()
@@ -139,15 +96,47 @@ void ModeTakeoff::navigate()
             return;
         }
     }
-  
+
+    if (!has_logged_reached_takeoff_speed)
+    {
+        if (plane.get_forward_speed() <= takeoff_speed * 0.9) {
+            plane.next_WP_loc.alt = plane.prev_WP_loc.alt + 100.0f; // Set to 1.0m above water
+        } else {
+            plane.next_WP_loc.alt = plane.prev_WP_loc.alt + target_alt*100.0;
+            has_logged_reached_takeoff_speed = true;
+            const float tkoff_speed = takeoff_speed;
+            gcs().send_text(MAV_SEVERITY_INFO, "Reached takeoff speed of %.1f", tkoff_speed);
+        }
+    }
+
+    // Check if reached target alt
+    if (!has_logged_reached_target_alt) {
+        const float altitude = plane.adjusted_altitude_cm() * 0.01f;
+        if (altitude >= target_alt) {
+            plane.set_flight_stage(AP_FixedWing::FlightStage::TAKEOFF);
+        } else {
+            plane.set_flight_stage(AP_FixedWing::FlightStage::NORMAL);
+            gcs().send_text(MAV_SEVERITY_INFO, "Current alt %.1f m, Reached target altitude of %.1f m", altitude, target_alt.get());
+            has_logged_reached_target_alt = true;
+
+            if (!takeoff_in_circle)
+                plane.next_WP_loc = plane.current_loc;  // For loitering around current spot
+
+#if AP_FENCE_ENABLED
+            plane.fence.auto_enable_fence_after_takeoff();
+#endif
+        }
+    }
+
+    // Update nav controller based on flight stage
     if (plane.flight_stage == AP_FixedWing::FlightStage::TAKEOFF) {
         if (takeoff_in_circle) {
-            plane.update_loiter(0);
+            plane.update_loiter(0);     // Zero indicates to use WP_LOITER_RAD
         } else {    
             plane.nav_controller->update_heading_hold(initial_heading_cd);
         }      
     } else if (plane.flight_stage == AP_FixedWing::FlightStage::NORMAL) {
-        plane.update_loiter(0); // Luc_TODO: what do we do after done taking off?
+        plane.update_loiter(0);     // If we are still in takeoff mode, continue loitering
         initial_heading_cd = -1;    // Reset initial heading after takeoff is complete
     }
 }
