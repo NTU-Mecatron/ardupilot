@@ -66,10 +66,13 @@ bool ModeTakeoff::_enter()
     plane.target_speed_ms = takeoff_speed;
 
     // Set target altitude
-    const float direction = degrees(ahrs.get_yaw());
     plane.next_WP_loc = plane.current_loc;
     plane.next_WP_loc.alt += target_alt*100.0;
-    plane.next_WP_loc.offset_bearing(direction, 1000);
+
+    // Save prev waypoint
+    plane.prev_WP_loc = plane.current_loc;
+
+    initial_heading_cd = wrap_360_cd(plane.ahrs.yaw_sensor);
 
     return true;
 }
@@ -99,13 +102,15 @@ void ModeTakeoff::update()
 
     // Check if reached target alt (which should be a negative number)
     const float altitude = plane.adjusted_altitude_cm() * 0.01f;
-    if (-altitude <= -target_alt) {
+    if (-altitude <= -target_alt && !has_logged_reached_target_alt) {
         plane.set_flight_stage(AP_FixedWing::FlightStage::TAKEOFF);
     } else {
         plane.set_flight_stage(AP_FixedWing::FlightStage::NORMAL);
         if (!has_logged_reached_target_alt) {
             has_logged_reached_target_alt = true;
             gcs().send_text(MAV_SEVERITY_INFO, "Current alt %.1f m, Reached target altitude of %.1f m", altitude, target_alt.get());
+            if (!takeoff_in_circle)
+                plane.next_WP_loc = plane.current_loc;  // For loitering around current spot
         }
     }
 }
@@ -134,18 +139,14 @@ void ModeTakeoff::navigate()
             return;
         }
     }
-
-    if (takeoff_in_circle) {
-        // Luc_TODO: update loiter with changing depth, or separate the axes
-        plane.update_loiter(0);
-    } else {    // Maintain heading when dive
-        if (initial_heading_cd == -1) {
-            initial_heading_cd = wrap_360_cd(plane.ahrs.yaw_sensor);
-        }
-        plane.nav_controller->update_heading_hold(initial_heading_cd);
-    }
-
-    if (plane.flight_stage == AP_FixedWing::FlightStage::NORMAL) {
+  
+    if (plane.flight_stage == AP_FixedWing::FlightStage::TAKEOFF) {
+        if (takeoff_in_circle) {
+            plane.update_loiter(0);
+        } else {    
+            plane.nav_controller->update_heading_hold(initial_heading_cd);
+        }      
+    } else if (plane.flight_stage == AP_FixedWing::FlightStage::NORMAL) {
         plane.update_loiter(0); // Luc_TODO: what do we do after done taking off?
         initial_heading_cd = -1;    // Reset initial heading after takeoff is complete
     }
