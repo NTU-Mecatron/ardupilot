@@ -754,9 +754,7 @@ public:
     const char *name4() const override { return "TKOF"; }
 
     // methods that affect movement of the vehicle in this mode
-    void update() override;
-
-    void navigate() override;
+    void update() override {};
 
     bool does_auto_navigation() const override { return true; }
 
@@ -764,20 +762,13 @@ public:
 
     // var_info for holding parameter information
     static const struct AP_Param::GroupInfo var_info[];
-
-protected:
+    
     AP_Float target_alt;
     AP_Float takeoff_speed;
-    AP_Int8 surface_elevator;
-    AP_Int8 takeoff_in_circle;
+    AP_Float ground_pitch;
+    AP_Float takeoff_pitch;
 
-    int32_t initial_heading_cd = -1;
-    float current_speed = 0.0;
-    uint32_t takeoff_start_ms = 0;
-
-    bool has_logged_reached_takeoff_speed = false;
-    bool has_logged_reached_target_alt = false;
-
+protected:
     bool _enter() override;
 };
 
