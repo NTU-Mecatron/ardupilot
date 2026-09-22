@@ -434,6 +434,7 @@ private:
         uint32_t accel_event_ms;
         uint32_t start_time_ms;
         bool waiting_for_rudder_neutral;
+        bool loiter_to_takeoff; // if the next wp is too near to starting point, we will keep loitering around this point until reaching target alt
     } takeoff_state;
 
     // ground steering controller state
@@ -1119,6 +1120,7 @@ private:
     // takeoff.cpp
     bool auto_takeoff_check(void);
     int8_t takeoff_tail_hold(void);
+    void update_takeoff(void);
     int16_t get_takeoff_pitch_min_cd(void);
     void landing_gear_update(void);
 

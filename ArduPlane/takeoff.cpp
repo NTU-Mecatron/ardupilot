@@ -134,6 +134,31 @@ no_launch:
     return false;
 }
 
+void Plane::update_takeoff(void)
+{
+    calc_throttle();
+    calc_nav_roll();
+    calc_nav_yaw_rate();
+
+    if (get_forward_speed() < mode_takeoff.takeoff_speed * 0.9f) {
+        // When we have not reached the minimum takeoff speed, use the ground pitch demand
+        // However, if our speed is even below TKOFF_TDRAG_SPD1, we use manual elevator control (refer to plane.stabilize_pitch())
+        nav_pitch_cd = int32_t(100.0f * mode_takeoff.ground_pitch);
+        return;
+    } else {
+        gcs().send_text(MAV_SEVERITY_INFO, "Reached takeoff speed of %.1f", mode_takeoff.takeoff_speed.get());
+    }
+
+    // If we are still far from target alt, use the takeoff pitch demand
+    // else let pitch be controlled by the altitude controller
+    int32_t relative_alt_cm = adjusted_relative_altitude_cm();
+    if (relative_alt_cm > auto_state.takeoff_altitude_rel_cm + 200) {
+        nav_pitch_cd = int32_t(100.0f * auto_state.takeoff_pitch_cd);
+    } else {
+        calc_nav_pitch();
+    }
+}
+
 /*
  * get the pitch min used during takeoff. This matches the mission pitch until near the end where it allows it to levels off
  */
@@ -180,36 +205,14 @@ int8_t Plane::takeoff_tail_hold(void)
 {
     bool in_takeoff = ((plane.flight_stage == AP_FixedWing::FlightStage::TAKEOFF) ||
                        (control_mode == &mode_fbwa && auto_state.fbwa_tdrag_takeoff_mode));
-    if (!in_takeoff) {
-        // not in takeoff
+    if (!in_takeoff ||
+        g.takeoff_tdrag_elevator == 0 ||
+        get_forward_speed() >= g.takeoff_tdrag_speed1) {
         return 0;
     }
-    if (g.takeoff_tdrag_elevator == 0) {
-        // no takeoff elevator set
-        goto return_zero;
-    }
-    if (auto_state.highest_airspeed >= g.takeoff_tdrag_speed1) {
-        // we've passed speed1. We now raise the tail and aim for
-        // level pitch. Return 0 meaning no fixed elevator setting
-        goto return_zero;
-    }
-    if (ahrs.pitch_sensor > auto_state.initial_pitch_cd + 1000) {
-        // the pitch has gone up by more then 10 degrees over the
-        // initial pitch. This may mean the nose is coming up for an
-        // early liftoff, perhaps due to a bad setting of
-        // g.takeoff_tdrag_speed1. Go to level flight to prevent a
-        // stall
-        goto return_zero;
-    }
-    // we are holding the tail down
-    return g.takeoff_tdrag_elevator;
 
-return_zero:
-    if (auto_state.fbwa_tdrag_takeoff_mode) {
-        gcs().send_text(MAV_SEVERITY_NOTICE, "FBWA tdrag off");
-        auto_state.fbwa_tdrag_takeoff_mode = false;
-    }
-    return 0;
+    // we are holding the tail manually
+    return g.takeoff_tdrag_elevator;
 }
 
 #if AP_LANDINGGEAR_ENABLED
