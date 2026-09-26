@@ -147,14 +147,9 @@ void Plane::update_takeoff(void)
         return;
     }
 
-    // If we are still far from target alt, use the takeoff pitch demand
-    // else let pitch be controlled by the altitude controller
-    int32_t relative_alt_cm = adjusted_relative_altitude_cm();
-    if (relative_alt_cm > auto_state.takeoff_altitude_rel_cm + 200) {
-        nav_pitch_cd = int32_t(100.0f * auto_state.takeoff_pitch_cd);
-    } else {
-        calc_nav_pitch();
-    }
+    // Pitch command from mission is the maximum allowable pitch during takeoff (may not always be the desired pitch)
+    calc_nav_pitch();
+    nav_pitch_cd = (abs(nav_pitch_cd) < abs(auto_state.takeoff_pitch_cd)) ? nav_pitch_cd : auto_state.takeoff_pitch_cd;
 }
 
 /*

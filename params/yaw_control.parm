@@ -21,7 +21,7 @@ YAW_TCONST       2.00000
 # Yaw rate to rudder PID
 YAW_RATE_P       7.000
 YAW_RATE_I       0.000
-YAW_RATE_D       9.0000
+YAW_RATE_D       7.0000
 YAW_RATE_IMAX    0.1100
 YAW_RATE_FF      0.500
 
