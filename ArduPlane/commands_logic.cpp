@@ -19,6 +19,10 @@ bool Plane::start_command(const AP_Mission::Mission_Command& cmd)
     }
 #endif
 
+    AP_Mission::Mission_Command next_nav_cmd;
+    const uint16_t next_index = mission.get_current_nav_index() + 1;
+    const bool have_next_cmd = mission.get_next_nav_cmd(next_index, next_nav_cmd);
+
     // special handling for nav vs non-nav commands
     if (AP_Mission::is_nav_cmd(cmd)) {
         // set takeoff_complete to true so we don't add extra elevator
@@ -30,9 +34,6 @@ bool Plane::start_command(const AP_Mission::Mission_Command& cmd)
         // reset loiter start time. New command is a new loiter
         loiter.start_time_ms = 0;
 
-        AP_Mission::Mission_Command next_nav_cmd;
-        const uint16_t next_index = mission.get_current_nav_index() + 1;
-        const bool have_next_cmd = mission.get_next_nav_cmd(next_index, next_nav_cmd);
         auto_state.wp_is_land_approach = have_next_cmd && (next_nav_cmd.id == MAV_CMD_NAV_LAND);
 #if HAL_QUADPLANE_ENABLED
         if (have_next_cmd && quadplane.is_vtol_land(next_nav_cmd.id)) {
@@ -51,6 +52,16 @@ bool Plane::start_command(const AP_Mission::Mission_Command& cmd)
         }
 #endif
         do_takeoff(cmd);
+        // AP_Mission::Mission_Command takeoff_cmd = cmd;
+        if (have_next_cmd) {
+            // takeoff_cmd.content.location.lat = next_nav_cmd.content.location.lat;
+            // takeoff_cmd.content.location.lng = next_nav_cmd.content.location.lng;
+            // if (takeoff_cmd.content.location.alt == 0) {
+            //     takeoff_cmd.content.location.alt = next_nav_cmd.content.location.alt;
+            //     takeoff_cmd.content.location.relative_alt = next_nav_cmd.content.location.relative_alt;
+            // }
+            do_nav_wp(next_nav_cmd);
+        }
         break;
 
     case MAV_CMD_NAV_WAYPOINT:                  // Navigate to Waypoint
@@ -386,22 +397,22 @@ void Plane::do_takeoff(const AP_Mission::Mission_Command& cmd)
     set_next_WP(cmd.content.location);
     // pitch in deg, airspeed  m/s, throttle %, track WP 1 or 0
     auto_state.takeoff_pitch_cd        = (int16_t)cmd.p1 * 100;
-    if (auto_state.takeoff_pitch_cd <= 0) {
-        // if the mission doesn't specify a pitch use 4 degrees
-        auto_state.takeoff_pitch_cd = 400;
+    if (auto_state.takeoff_pitch_cd >= 0) {
+        // if the mission doesn't specify a pitch use default
+        auto_state.takeoff_pitch_cd = int32_t(100.0f * mode_takeoff.takeoff_pitch);
     }
     auto_state.takeoff_altitude_rel_cm = next_WP_loc.alt - home.alt;
-    next_WP_loc.lat = home.lat + 10;
-    next_WP_loc.lng = home.lng + 10;
     auto_state.takeoff_speed_time_ms = 0;
     auto_state.takeoff_complete = false;                            // set flag to use gps ground course during TO.  IMU will be doing yaw drift correction
     auto_state.height_below_takeoff_to_level_off_cm = 0;
+    target_speed_ms = mode_takeoff.takeoff_speed;
     // Flag also used to override "on the ground" throttle disable
 
     // zero locked course
     steer_state.locked_course_err = 0;
     steer_state.hold_course_cd = -1;
     auto_state.baro_takeoff_alt = barometer.get_altitude();
+    takeoff_state.loiter_to_takeoff = false;
 }
 
 void Plane::do_nav_wp(const AP_Mission::Mission_Command& cmd)
@@ -561,61 +572,43 @@ bool Plane::verify_takeoff()
 #if AP_AHRS_DCM_ENABLED
     trust_ahrs_yaw |= ahrs.dcm_yaw_initialised();
 #endif
-    if (trust_ahrs_yaw && steer_state.hold_course_cd == -1) {
-        const float min_gps_speed = 5;
-        if (auto_state.takeoff_speed_time_ms == 0 && 
-            gps.status() >= AP_GPS::GPS_OK_FIX_3D && 
-            gps.ground_speed() > min_gps_speed &&
-            hal.util->safety_switch_state() != AP_HAL::Util::SAFETY_DISARMED) {
-            auto_state.takeoff_speed_time_ms = millis();
-        }
-        if (auto_state.takeoff_speed_time_ms != 0 &&
-            millis() - auto_state.takeoff_speed_time_ms >= 2000) {
-            // once we reach sufficient speed for good GPS course
-            // estimation we save our current GPS ground course
-            // corrected for summed yaw to set the take off
-            // course. This keeps wings level until we are ready to
-            // rotate, and also allows us to cope with arbitrary
-            // compass errors for auto takeoff
-            float takeoff_course = wrap_PI(radians(gps.ground_course())) - steer_state.locked_course_err;
-            takeoff_course = wrap_PI(takeoff_course);
-            steer_state.hold_course_cd = wrap_360_cd(degrees(takeoff_course)*100);
-            gcs().send_text(MAV_SEVERITY_INFO, "Holding course %d at %.1fm/s (%.1f)",
-                              (int)steer_state.hold_course_cd,
-                              (double)gps.ground_speed(),
-                              (double)degrees(steer_state.locked_course_err));
-        }
-    }
+    // Keep holding course to next waypoint until when we are near enough
+    // Then we switch to loitering until target alt is reached
+    if (!takeoff_state.loiter_to_takeoff) {
+        nav_controller->update_waypoint(prev_WP_loc, next_WP_loc);
 
-    if (steer_state.hold_course_cd != -1) {
-        // call navigation controller for heading hold
-        nav_controller->update_heading_hold(steer_state.hold_course_cd);
+        const float distance_to_next_wp = current_loc.get_distance(next_WP_loc);
+        const float wp_radius = get_wp_radius();
+        if (distance_to_next_wp < wp_radius) {
+            takeoff_state.loiter_to_takeoff = true;
+            gcs().send_text(MAV_SEVERITY_INFO, "We are currently %.1f m from the intended takeoff location, less than WP_RADIUS %.1f m; Change to SPIRAL TAKEOFF", (double)(distance_to_next_wp), (double)(wp_radius));
+        }
     } else {
-        nav_controller->update_level_flight();        
+        update_loiter(0);
     }
 
     // check for optional takeoff timeout
     if (takeoff_state.start_time_ms != 0 && g2.takeoff_timeout > 0) {
-        const float ground_speed = gps.ground_speed();
-        const float takeoff_min_ground_speed = 4;
         if (!arming.is_armed_and_safety_off()) {
             return false;
         }
-        if (ground_speed >= takeoff_min_ground_speed) {
+        const float speed = get_forward_speed();
+        if (speed >= aparm.airspeed_min) {
             takeoff_state.start_time_ms = 0;
         } else {
             uint32_t now = AP_HAL::millis();
             if (now - takeoff_state.start_time_ms > (uint32_t)(1000U * g2.takeoff_timeout)) {
-                gcs().send_text(MAV_SEVERITY_INFO, "Takeoff timeout at %.1f m/s", ground_speed);
-                plane.arming.disarm(AP_Arming::Method::TAKEOFFTIMEOUT);
+                gcs().send_text(MAV_SEVERITY_INFO, "Takeoff timeout at %.1f m/s", speed);
+                arming.disarm(AP_Arming::Method::TAKEOFFTIMEOUT);
                 mission.reset();
             }
+            
         }
     }
 
     // see if we have reached takeoff altitude
     int32_t relative_alt_cm = adjusted_relative_altitude_cm();
-    if (relative_alt_cm > auto_state.takeoff_altitude_rel_cm) {
+    if (relative_alt_cm < auto_state.takeoff_altitude_rel_cm) {
         gcs().send_text(MAV_SEVERITY_INFO, "Takeoff complete at %.2fm",
                           (double)(relative_alt_cm*0.01f));
         steer_state.hold_course_cd = -1;
@@ -623,7 +616,7 @@ bool Plane::verify_takeoff()
         next_WP_loc = prev_WP_loc = current_loc;
 
 #if AP_FENCE_ENABLED
-        plane.fence.auto_enable_fence_after_takeoff();
+        fence.auto_enable_fence_after_takeoff();
 #endif
 
         // don't cross-track on completion of takeoff, as otherwise we
@@ -964,28 +957,18 @@ bool Plane::do_change_speed(const AP_Mission::Mission_Command& cmd)
 
 bool Plane::do_change_speed(uint8_t speedtype, float speed_target_ms, float throttle_pct)
 {
-    switch (speedtype) {
-    case 0:             // Airspeed
-        if (is_equal(speed_target_ms, -2.0f)) {
-            new_airspeed_cm = -1; // return to default airspeed
-            return true;
-        } else if ((speed_target_ms >= aparm.airspeed_min.get()) &&
-                   (speed_target_ms <= aparm.airspeed_max.get()))  {
-            new_airspeed_cm = speed_target_ms * 100; //new airspeed target for AUTO or GUIDED modes
-            gcs().send_text(MAV_SEVERITY_INFO, "Set airspeed %u m/s", (unsigned)speed_target_ms);
-            return true;
-        }
-        break;
-    case 1:             // Ground speed
-        gcs().send_text(MAV_SEVERITY_INFO, "Set groundspeed %u", (unsigned)speed_target_ms);
-        aparm.min_groundspeed.set(speed_target_ms);
+    // Airspeed or ground speed is the same now so we dont care about it
+    if ((speed_target_ms >= aparm.airspeed_min.get()) &&
+        (speed_target_ms <= aparm.airspeed_max.get()))  {
+        target_speed_ms = speed_target_ms;
+        gcs().send_text(MAV_SEVERITY_INFO, "Set speed %f m/s", (double)target_speed_ms);
         return true;
+    } else {
+        gcs().send_text(MAV_SEVERITY_WARNING, "Requested speed %f m/s out of range", (double)speed_target_ms);
     }
 
     if (throttle_pct > 0 && throttle_pct <= 100) {
-        gcs().send_text(MAV_SEVERITY_INFO, "Set throttle %u", (unsigned)throttle_pct);
-        aparm.throttle_cruise.set(throttle_pct);
-        return true;
+        gcs().send_text(MAV_SEVERITY_INFO, "We do not support setting throttle directly anymore. Please set only speed.");
     }
 
     return false;

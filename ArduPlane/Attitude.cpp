@@ -71,6 +71,14 @@ void Plane::stabilize_pitch()
 #if HAL_QUADPLANE_ENABLED
     // Luc_TODO
 #endif
+    int8_t force_elevator = takeoff_tail_hold();
+    if (force_elevator != 0) {
+        // we are holding the tail down during takeoff. Just convert
+        // from a percentage to a -4500..4500 centidegree angle
+        SRV_Channels::set_output_scaled(SRV_Channel::k_elevator, 45*force_elevator);
+        return;
+    }
+    
     const int32_t demanded_pitch = nav_pitch_cd + int32_t(g.pitch_trim * 100.0);
     const float speed_scaler = get_speed_scaler();
     const float pitch_out = (speed_scaler > 1e-2f) ? pitchController.get_servo_out(demanded_pitch - ahrs.pitch_sensor, speed_scaler, false) : 0.0f;

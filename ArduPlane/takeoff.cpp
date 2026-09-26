@@ -134,88 +134,22 @@ no_launch:
     return false;
 }
 
-/*
-  calculate desired bank angle during takeoff, setting nav_roll_cd
- */
-void Plane::takeoff_calc_roll(void)
+void Plane::update_takeoff(void)
 {
-    if (steer_state.hold_course_cd == -1) {
-        // we don't yet have a heading to hold - just level
-        // the wings until we get up enough speed to get a GPS heading
-        nav_roll_cd = 0;
-        return;
-    }
-
+    calc_throttle();
     calc_nav_roll();
+    calc_nav_yaw_rate();
 
-    // during takeoff use the level flight roll limit to prevent large
-    // wing strike. Slowly allow for more roll as we get higher above
-    // the takeoff altitude
-    int32_t takeoff_roll_limit_cd = roll_limit_cd;
-
-    if (auto_state.highest_airspeed < g.takeoff_rotate_speed) {
-        // before Vrotate (aka, on the ground)
-        takeoff_roll_limit_cd = g.level_roll_limit * 100;
-    } else {
-        // lim1 - below altitude TKOFF_LVL_ALT, restrict roll to LEVEL_ROLL_LIMIT
-        // lim2 - above altitude (TKOFF_LVL_ALT * 3) allow full flight envelope of ROLL_LIMIT_DEG
-        // In between lim1 and lim2 use a scaled roll limit.
-        // The *3 scheme should scale reasonably with both small and large aircraft
-        const float lim1 = MAX(mode_takeoff.level_alt, 0);
-        const float lim2 = MIN(mode_takeoff.level_alt*3, mode_takeoff.target_alt);
-        const float current_baro_alt = barometer.get_altitude();
-
-        takeoff_roll_limit_cd = linear_interpolate(g.level_roll_limit*100, roll_limit_cd,
-                                        current_baro_alt,
-                                        auto_state.baro_takeoff_alt+lim1, auto_state.baro_takeoff_alt+lim2);
-    }
-
-    nav_roll_cd = constrain_int32(nav_roll_cd, -takeoff_roll_limit_cd, takeoff_roll_limit_cd);
-}
-
-        
-/*
-  calculate desired pitch angle during takeoff, setting nav_pitch_cd
- */
-void Plane::takeoff_calc_pitch(void)
-{
-    if (auto_state.highest_airspeed < g.takeoff_rotate_speed) {
-        // we have not reached rotate speed, use the specified takeoff target pitch angle
+    if (get_forward_speed() < mode_takeoff.takeoff_speed * 0.9f) {
+        // When we have not reached the minimum takeoff speed, use the ground pitch demand
+        // However, if our speed is even below TKOFF_TDRAG_SPD1, we use manual elevator control (refer to plane.stabilize_pitch())
         nav_pitch_cd = int32_t(100.0f * mode_takeoff.ground_pitch);
         return;
     }
 
-    if (ahrs.using_airspeed_sensor()) {
-        int16_t takeoff_pitch_min_cd = get_takeoff_pitch_min_cd();
-        calc_nav_pitch();
-        if (nav_pitch_cd < takeoff_pitch_min_cd) {
-            nav_pitch_cd = takeoff_pitch_min_cd;
-        }
-    } else {
-        if (g.takeoff_rotate_speed > 0) {
-            // Rise off ground takeoff so delay rotation until ground speed indicates adequate airspeed
-            nav_pitch_cd = (gps.ground_speed() / (float)aparm.airspeed_cruise) * auto_state.takeoff_pitch_cd;
-            nav_pitch_cd = constrain_int32(nav_pitch_cd, 500, auto_state.takeoff_pitch_cd); 
-        } else {
-            // Doing hand or catapult launch so need at least 5 deg pitch to prevent initial height loss
-            nav_pitch_cd = MAX(auto_state.takeoff_pitch_cd, 500);
-        }
-    }
-
-    if (aparm.stall_prevention != 0) {
-        if (mission.get_current_nav_cmd().id == MAV_CMD_NAV_TAKEOFF ||
-            control_mode == &mode_takeoff) {
-            // during takeoff we want to prioritise roll control over
-            // pitch. Apply a reduction in pitch demand if our roll is
-            // significantly off. The aim of this change is to
-            // increase the robustness of hand launches, particularly
-            // in cross-winds. If we start to roll over then we reduce
-            // pitch demand until the roll recovers
-            float roll_error_rad = radians(constrain_float(labs(nav_roll_cd - ahrs.roll_sensor) * 0.01, 0, 90));
-            float reduction = sq(cosf(roll_error_rad));
-            nav_pitch_cd *= reduction;
-        }
-    }
+    // Pitch command from mission is the maximum allowable pitch during takeoff (may not always be the desired pitch)
+    calc_nav_pitch();
+    nav_pitch_cd = (abs(nav_pitch_cd) < abs(auto_state.takeoff_pitch_cd)) ? nav_pitch_cd : auto_state.takeoff_pitch_cd;
 }
 
 /*
@@ -264,36 +198,14 @@ int8_t Plane::takeoff_tail_hold(void)
 {
     bool in_takeoff = ((plane.flight_stage == AP_FixedWing::FlightStage::TAKEOFF) ||
                        (control_mode == &mode_fbwa && auto_state.fbwa_tdrag_takeoff_mode));
-    if (!in_takeoff) {
-        // not in takeoff
+    if (!in_takeoff ||
+        g.takeoff_tdrag_elevator == 0 ||
+        get_forward_speed() >= g.takeoff_tdrag_speed1) {
         return 0;
     }
-    if (g.takeoff_tdrag_elevator == 0) {
-        // no takeoff elevator set
-        goto return_zero;
-    }
-    if (auto_state.highest_airspeed >= g.takeoff_tdrag_speed1) {
-        // we've passed speed1. We now raise the tail and aim for
-        // level pitch. Return 0 meaning no fixed elevator setting
-        goto return_zero;
-    }
-    if (ahrs.pitch_sensor > auto_state.initial_pitch_cd + 1000) {
-        // the pitch has gone up by more then 10 degrees over the
-        // initial pitch. This may mean the nose is coming up for an
-        // early liftoff, perhaps due to a bad setting of
-        // g.takeoff_tdrag_speed1. Go to level flight to prevent a
-        // stall
-        goto return_zero;
-    }
-    // we are holding the tail down
-    return g.takeoff_tdrag_elevator;
 
-return_zero:
-    if (auto_state.fbwa_tdrag_takeoff_mode) {
-        gcs().send_text(MAV_SEVERITY_NOTICE, "FBWA tdrag off");
-        auto_state.fbwa_tdrag_takeoff_mode = false;
-    }
-    return 0;
+    // we are holding the tail manually
+    return g.takeoff_tdrag_elevator;
 }
 
 #if AP_LANDINGGEAR_ENABLED

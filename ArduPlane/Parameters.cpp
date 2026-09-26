@@ -112,96 +112,24 @@ const AP_Param::Info Plane::var_info[] = {
     // @Values: 0:Disabled,1:FBWMixing,3:VTOL Yaw only
     // @User: Advanced
     GSCALAR(stick_mixing,           "STICK_MIXING",   uint8_t(StickMixing::FBW)),
-
-    // @Param: TKOFF_THR_MINSPD
-    // @DisplayName: Takeoff throttle min speed
-    // @Description: Minimum GPS ground speed in m/s used by the speed check that un-suppresses throttle in auto-takeoff. This can be be used for catapult launches where you want the motor to engage only after the plane leaves the catapult, but it is preferable to use the TKOFF_THR_MINACC and TKOFF_THR_DELAY parameters for catapult launches due to the errors associated with GPS measurements. For hand launches with a pusher prop it is strongly advised that this parameter be set to a value no less than 4 m/s to provide additional protection against premature motor start. Note that the GPS velocity will lag the real velocity by about 0.5 seconds. The ground speed check is delayed by the TKOFF_THR_DELAY parameter.
-    // @Units: m/s
-    // @Range: 0 30
-    // @Increment: 0.1
-    // @User: Standard
-    GSCALAR(takeoff_throttle_min_speed,     "TKOFF_THR_MINSPD",  0),
-
-    // @Param: TKOFF_THR_MINACC
-    // @DisplayName: Takeoff throttle min acceleration
-    // @Description: Minimum forward acceleration in m/s/s before arming the ground speed check in auto-takeoff. This is meant to be used for hand launches. Setting this value to 0 disables the acceleration test which means the ground speed check will always be armed which could allow GPS velocity jumps to start the engine. For hand launches and bungee launches this should be set to around 15. Also see TKOFF_ACCEL_CNT paramter for control of full "shake to arm".
-    // @Units: m/s/s
-    // @Range: 0 30
-    // @Increment: 0.1
-    // @User: Standard
-    GSCALAR(takeoff_throttle_min_accel,     "TKOFF_THR_MINACC",  0),
-
-    // @Param: TKOFF_THR_DELAY
-    // @DisplayName: Takeoff throttle delay
-    // @Description: This parameter sets the time delay (in 1/10ths of a second) that the ground speed check is delayed after the forward acceleration check controlled by TKOFF_THR_MINACC has passed. For hand launches with pusher propellers it is essential that this is set to a value of no less than 2 (0.2 seconds) to ensure that the aircraft is safely clear of the throwers arm before the motor can start. For bungee launches a larger value can be used (such as 30) to give time for the bungee to release from the aircraft before the motor is started.
-    // @Units: ds
-    // @Range: 0 127
-    // @Increment: 1
-    // @User: Standard
-    GSCALAR(takeoff_throttle_delay,     "TKOFF_THR_DELAY",  2),
-
-    // @Param: TKOFF_THR_MAX_T
-    // @DisplayName: Takeoff throttle maximum time
-    // @Description: This sets the time that maximum throttle will be forced during a fixed wing takeoff without an airspeed sensor. If an airspeed sensor is being used then the throttle is set to maximum until the takeoff airspeed is reached.
-    // @Units: s
-    // @Range: 0 10
-    // @Increment: 0.5
-    // @User: Standard
-    ASCALAR(takeoff_throttle_max_t,     "TKOFF_THR_MAX_T",  4),
     
     // @Param: TKOFF_TDRAG_ELEV
     // @DisplayName: Takeoff tail dragger elevator
-    // @Description: This parameter sets the amount of elevator to apply during the initial stage of a takeoff. It is used to hold the tail wheel of a taildragger on the ground during the initial takeoff stage to give maximum steering. This option should be combined with the TKOFF_TDRAG_SPD1 option and the GROUND_STEER_ALT option along with tuning of the ground steering controller. A value of zero means to bypass the initial "tail hold" stage of takeoff. Set to zero for hand and catapult launch. For tail-draggers you should normally set this to 100, meaning full up elevator during the initial stage of takeoff. For most tricycle undercarriage aircraft a value of zero will work well, but for some tricycle aircraft a small negative value (say around -20 to -30) will apply down elevator which will hold the nose wheel firmly on the ground during initial acceleration. Only use a negative value if you find that the nosewheel doesn't grip well during takeoff. Too much down elevator on a tricycle undercarriage may cause instability in steering as the plane pivots around the nosewheel. Add down elevator 10 percent at a time.
+    // @Description: This parameter sets the amount of elevator to apply during the initial stage of a takeoff when the speed is still less than TKOFF_TDRAG_SPD1. It is used to hold the elevator during the initial takeoff stage to give maximum throttle.
     // @Units: %
     // @Range: -100 100
     // @Increment: 1
     // @User: Standard
-    GSCALAR(takeoff_tdrag_elevator,     "TKOFF_TDRAG_ELEV",  0),
+    GSCALAR(takeoff_tdrag_elevator,     "TKOFF_TDRAG_ELEV",  30),
 
     // @Param: TKOFF_TDRAG_SPD1
     // @DisplayName: Takeoff tail dragger speed1
-    // @Description: This parameter sets the airspeed at which to stop holding the tail down and transition to rudder control of steering on the ground. When TKOFF_TDRAG_SPD1 is reached the pitch of the aircraft will be held level until TKOFF_ROTATE_SPD is reached, at which point the takeoff pitch specified in the mission will be used to "rotate" the pitch for takeoff climb. Set TKOFF_TDRAG_SPD1 to zero to go straight to rotation. This should be set to zero for hand launch and catapult launch. It should also be set to zero for tricycle undercarriages unless you are using the method above to gently hold the nose wheel down. For tail dragger aircraft it should be set just below the stall speed.
+    // @Description: This parameter sets the airspeed at which to stop holding the elevator manually and transition to pitch control of elevator. 
     // @Units: m/s
-    // @Range: 0 30
+    // @Range: 0 2
     // @Increment: 0.1
     // @User: Standard
-    GSCALAR(takeoff_tdrag_speed1,     "TKOFF_TDRAG_SPD1",  0),
-
-    // @Param: TKOFF_ROTATE_SPD
-    // @DisplayName: Takeoff rotate speed
-    // @Description: This parameter sets the airspeed at which the aircraft will "rotate", setting climb pitch specified in the mission. If TKOFF_ROTATE_SPD is zero then the climb pitch will be used as soon as takeoff is started. For hand launch and catapult launches a TKOFF_ROTATE_SPD of zero should be set. For all ground launches TKOFF_ROTATE_SPD should be set above the stall speed, usually by about 10 to 30 percent. During the run, use TKOFF_GND_PITCH to keep the aircraft on the runway while below this airspeed.
-    // @Units: m/s
-    // @Range: 0 30
-    // @Increment: 0.1
-    // @User: Standard
-    GSCALAR(takeoff_rotate_speed,     "TKOFF_ROTATE_SPD",  0),
-
-    // @Param: TKOFF_THR_SLEW
-    // @DisplayName: Takeoff throttle slew rate
-    // @Description: This parameter sets the slew rate for the throttle during auto takeoff. When this is zero the THR_SLEWRATE parameter is used during takeoff. For rolling takeoffs it can be a good idea to set a lower slewrate for takeoff to give a slower acceleration which can improve ground steering control. The value is a percentage throttle change per second, so a value of 20 means to advance the throttle over 5 seconds on takeoff. Values below 20 are not recommended as they may cause the plane to try to climb out with too little throttle. A value of -1 means no limit on slew rate in takeoff.
-    // @Units: %/s
-    // @Range: -1 127
-    // @Increment: 1
-    // @User: Standard
-    GSCALAR(takeoff_throttle_slewrate, "TKOFF_THR_SLEW",  0),
-
-    // @Param: TKOFF_PLIM_SEC
-    // @DisplayName: Takeoff pitch limit reduction
-    // @Description: This parameter reduces the pitch minimum limit of an auto-takeoff just a few seconds before it reaches the target altitude. This reduces overshoot by allowing the flight controller to start leveling off a few seconds before reaching the target height. When set to zero, the mission pitch min is enforced all the way to and through the target altitude, otherwise the pitch min slowly reduces to zero in the final segment. This is the pitch_min, not the demand. The flight controller should still be commanding to gain altitude to finish the takeoff but with this param it is not forcing it higher than it wants to be.
-    // @Units: s
-    // @Range: 0 10
-    // @Increment: 0.5
-    // @User: Advanced
-    GSCALAR(takeoff_pitch_limit_reduction_sec, "TKOFF_PLIM_SEC",  2),
-
-    // @Param: TKOFF_FLAP_PCNT
-    // @DisplayName: Takeoff flap percentage
-    // @Description: The amount of flaps (as a percentage) to apply in automatic takeoff
-    // @Range: 0 100
-    // @Units: %
-    // @Increment: 1
-    // @User: Advanced
-    GSCALAR(takeoff_flap_percent,     "TKOFF_FLAP_PCNT", 0),
+    GSCALAR(takeoff_tdrag_speed1,     "TKOFF_TDRAG_SPD1",  1.0f),
 
     // @Param: LEVEL_ROLL_LIMIT
     // @DisplayName: Level flight roll limit
