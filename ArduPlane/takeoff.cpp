@@ -145,8 +145,6 @@ void Plane::update_takeoff(void)
         // However, if our speed is even below TKOFF_TDRAG_SPD1, we use manual elevator control (refer to plane.stabilize_pitch())
         nav_pitch_cd = int32_t(100.0f * mode_takeoff.ground_pitch);
         return;
-    } else {
-        gcs().send_text(MAV_SEVERITY_INFO, "Reached takeoff speed of %.1f", mode_takeoff.takeoff_speed.get());
     }
 
     // If we are still far from target alt, use the takeoff pitch demand

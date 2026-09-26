@@ -576,14 +576,15 @@ bool Plane::verify_takeoff()
     // Then we switch to loitering until target alt is reached
     if (!takeoff_state.loiter_to_takeoff) {
         nav_controller->update_waypoint(prev_WP_loc, next_WP_loc);
-        gcs().send_text(MAV_SEVERITY_INFO, "Navigating to takeoff waypoint, distance remaining: %.1f m", (double)(current_loc.get_distance(next_WP_loc)));
-        if (current_loc.get_distance(next_WP_loc) < get_wp_radius()) {
+
+        const float distance_to_next_wp = current_loc.get_distance(next_WP_loc);
+        const float wp_radius = get_wp_radius();
+        if (distance_to_next_wp < wp_radius) {
             takeoff_state.loiter_to_takeoff = true;
-            gcs().send_text(MAV_SEVERITY_INFO, "We are less than %.1f m from the intended takeoff location, changing to going in circle until reaching target alt", (double)(get_wp_radius()));
+            gcs().send_text(MAV_SEVERITY_INFO, "We are currently %.1f m from the intended takeoff location, less than WP_RADIUS %.1f m; Change to SPIRAL TAKEOFF", (double)(distance_to_next_wp), (double)(wp_radius));
         }
     } else {
         update_loiter(0);
-        gcs().send_text(MAV_SEVERITY_INFO, "Loitering at takeoff location");
     }
 
     // check for optional takeoff timeout

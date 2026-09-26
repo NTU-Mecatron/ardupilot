@@ -1,0 +1,22 @@
+# Default radius for loitering around a wp
+WP_LOITER_RAD    -30
+
+# Default radius to be considered to have reached a wp
+WP_RADIUS        30
+
+# Takeoff taildrag params
+# Used for when vehicle is on surface and taking off, we want to force the elevator up so that vehicle can maintain upward pitch and thruster in water
+# Forcing elevator is useful because at low speed, pid control will not be accurate
+# When forward speed is above TKOFF_TDRAG_SPD1, auto transition from elevator forcing to Pitch_PID to achieve target pitch of TKOFF_GND_PITCH
+# TKOFF_GND_PITCH should be positive so that vehicle will continue to pitch up until reaching TKOFF_SPEED
+TKOFF_TDRAG_ELEV 30
+TKOFF_TDRAG_SPD1 1.000000
+TKOFF_GND_PITCH  5.000000
+
+# Takeoff alt, pitch and speed are default values if the values given in mission file is invalid/empty
+# When forward speed has reached TKOFF_SPEED, command Pitch_PID to achieve TKOFF_PITCH or the pitch given in mission file (if valid ie. negative)
+TKOFF_ALT        -3.000000
+TKOFF_PITCH      -15.000000
+TKOFF_SPEED      3.000000
+# If after this time and still has not reached takeoff speed, abort
+TKOFF_TIMEOUT    10
