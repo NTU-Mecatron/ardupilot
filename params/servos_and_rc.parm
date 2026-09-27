@@ -1,28 +1,3 @@
-# Compulsory bidirectional thruster setup
-USE_REV_THRUST  1
-THR_MIN         -100
-THR_MAX         100
-
-# Disable rc thr failsafe as most of the time we do not have rc
-THR_FAILSAFE     0
-
-# Control tuning and navigation tuning only
-LOG_BITMASK      8241
-LOG_FILE_DSRMROT 1
-
-# Disable stick mixing
-STICK_MIXING     0
-
-# Changing any of these fins configs requires reboot to take effect
-# Fins mixing config (0-plus, 1-X, 2-plus-w-canards, 3-x-w-canards)
-FINS_CONFIG      3
-# Roll effectiveness factor in control effectiveness matrix. Should be equal to r/x where r is the body radius and x is distance from CG to fin along the forward axis.
-FINS_RLL_FT      0.330000
-# Pitch effectiveness factor of canards in matrix. Must be positive number and smaller than the pitch factor of back fins (which is either 1 or 0.707).
-FINS_C_PIT_FT    0.300000
-# Roll effectiveness factor of canards in matrix. Can be set to zero to disable roll contribution from canards.
-FINS_C_RLL_FT    0.000000
-
 # Script 1-6 functions for fins
 SERVO1_FUNCTION 94
 SERVO2_FUNCTION 95

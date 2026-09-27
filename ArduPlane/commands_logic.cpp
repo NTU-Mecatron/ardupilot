@@ -52,14 +52,10 @@ bool Plane::start_command(const AP_Mission::Mission_Command& cmd)
         }
 #endif
         do_takeoff(cmd);
-        // AP_Mission::Mission_Command takeoff_cmd = cmd;
         if (have_next_cmd) {
-            // takeoff_cmd.content.location.lat = next_nav_cmd.content.location.lat;
-            // takeoff_cmd.content.location.lng = next_nav_cmd.content.location.lng;
-            // if (takeoff_cmd.content.location.alt == 0) {
-            //     takeoff_cmd.content.location.alt = next_nav_cmd.content.location.alt;
-            //     takeoff_cmd.content.location.relative_alt = next_nav_cmd.content.location.relative_alt;
-            // }
+            // Since takeoff is just a command without a setpoint, we can use the next setpoint as the initial navigation target
+            // This allows for loitering takeoff by placing this next waypoint very near to starting point
+            // Or straight line takeoff if this waypoint is far from starting point
             do_nav_wp(next_nav_cmd);
         }
         break;

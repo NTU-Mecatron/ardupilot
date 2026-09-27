@@ -4,7 +4,7 @@ PTCH_LIM_MIN_DEG -20.000000
 
 # PI controller: altitude -> pitch
 # BUOYANCY_FF: Pitch down angle (degrees) to counteract buoyancy at typical operating speed (SCALING_SPEED)
-ALT_CTRL_P       0.1500
+ALT_CTRL_P       0.100
 ALT_CTRL_I       0.0100
 ALT_CTRL_IMAX    0.07000
 ALT_BUOYANCY_FF  0.000000
