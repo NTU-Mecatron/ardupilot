@@ -15,7 +15,7 @@ const AP_Param::GroupInfo AP_AttitudeController::var_info[] = {
     // @Units: s
     // @Increment: 0.1
     // @User: Advanced
-    AP_GROUPINFO("_TCONST", 1, AP_AttitudeController, gains.tau, 0.5f),
+    AP_GROUPINFO("_TCONST", 1, AP_AttitudeController, gains.tau, 1.0f),
 
     // @Param: _MAX_RATE
     // @DisplayName: Attitude axis max rate
@@ -24,7 +24,7 @@ const AP_Param::GroupInfo AP_AttitudeController::var_info[] = {
     // @Units: deg/s
     // @Increment: 1
     // @User: Advanced
-    AP_GROUPINFO("_MAX_RATE", 2, AP_AttitudeController, gains.rmax_pos, 30),
+    AP_GROUPINFO("_MAX_RATE", 2, AP_AttitudeController, gains.rmax_pos, 15),
 
     // @Param: _RATE_P
     // @DisplayName: Attitude axis rate controller P gain
