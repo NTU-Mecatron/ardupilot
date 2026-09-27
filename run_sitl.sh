@@ -86,7 +86,7 @@ fi
 if [ "$MODE" = "json" ]; then
     PYTHON_CMD="$PYTHON_CMD \
     --model JSON:$JSON_BACKEND_SIM_IP \
-    --add-param-file=$ARDUPILOT_ROOT_DIR/params/sitl_json.parm"
+    --add-param-file=$ARDUPILOT_ROOT_DIR/params/usv/sitl_json.parm"
 fi
 
 # Execute the command
