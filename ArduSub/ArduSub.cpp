@@ -345,6 +345,16 @@ bool Sub::control_check_barometer()
     return true;
 }
 
+// returns true if we have a usable vertical position estimate for modes without manual throttle.
+// Without a depth sensor (e.g. surface vessel) fall back to the EKF's vertical estimate (EK3_SRCn_POSZ, e.g. GPS)
+bool Sub::alt_estimate_ok()
+{
+    if (ap.depth_sensor_present) {
+        return control_check_barometer();
+    }
+    return inertial_nav.get_filter_status().flags.vert_pos;
+}
+
 // vehicle specific waypoint info helpers
 bool Sub::get_wp_distance_m(float &distance) const
 {
