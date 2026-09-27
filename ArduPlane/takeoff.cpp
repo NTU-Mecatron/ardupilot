@@ -144,12 +144,11 @@ void Plane::update_takeoff(void)
         // When we have not reached the minimum takeoff speed, use the ground pitch demand
         // However, if our speed is even below TKOFF_TDRAG_SPD1, we use manual elevator control (refer to plane.stabilize_pitch())
         nav_pitch_cd = int32_t(100.0f * mode_takeoff.ground_pitch);
-        return;
+    } else {
+        // Pitch command from mission is the maximum allowable pitch during takeoff (may not always be the desired pitch)
+        calc_nav_pitch();
+        nav_pitch_cd = (abs(nav_pitch_cd) < abs(auto_state.takeoff_pitch_cd)) ? nav_pitch_cd : auto_state.takeoff_pitch_cd;
     }
-
-    // Pitch command from mission is the maximum allowable pitch during takeoff (may not always be the desired pitch)
-    calc_nav_pitch();
-    nav_pitch_cd = (abs(nav_pitch_cd) < abs(auto_state.takeoff_pitch_cd)) ? nav_pitch_cd : auto_state.takeoff_pitch_cd;
 }
 
 /*
