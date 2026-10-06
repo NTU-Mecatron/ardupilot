@@ -81,8 +81,8 @@ void AP_AltitudeController::update(float target_alt_cm, float current_alt_cm, fl
     // Update PID controller with altitude error
     // PID input is altitude in meters, output is desired pitch in radians
     // Pitch control is scaled by the speed factor
-    // When speed is faster than scaling speed, we scale down the pitch quadratically with speed, else linearly
-    const float scaler = (speed_scaler > 1.0) ? speed_scaler : speed_scaler * speed_scaler;
+    // When speed is faster than scaling speed, we scale down the pitch demand more aggressively, else linearly
+    const float scaler = (speed_scaler > 1.0) ? speed_scaler : speed_scaler * (2 + speed_scaler) * 0.33333;
     float pitch_rad = _pid_alt.update_all(target_alt * scaler, current_alt * scaler, dt, limit_I);
 
     // Default feedforward pitch adjustment based on buoyancy (aka disturbance feedforward)
