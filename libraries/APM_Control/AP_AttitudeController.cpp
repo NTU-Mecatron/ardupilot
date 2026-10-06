@@ -191,7 +191,7 @@ float AP_AttitudeController::get_rate_out(float desired_rate, float scaler, bool
     pinfo.error = pinfo.target - pinfo.actual;
 
     // sum components
-    float out = pinfo.FF + pinfo.P + pinfo.I + pinfo.D + pinfo.DFF;
+    float out = pinfo.FF + pinfo.P + pinfo.I + pinfo.D;
 
     // remember the last output to trigger the I limit
     _last_out = out;
