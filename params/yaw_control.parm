@@ -23,12 +23,12 @@ YAW_RATE_FF      0.500
 
 YAW_RATE_D_FF    0.000000
 YAW_RATE_FLTD    0.200000
-YAW_RATE_FLTE    0.000000
-YAW_RATE_FLTT    10.000000
+YAW_RATE_FLTE    1.000000
+YAW_RATE_FLTT    0.000000
 YAW_RATE_NEF     0
 YAW_RATE_NTF     0
 YAW_RATE_PDMX    0.40000
-YAW_RATE_SMAX    150.000000
+YAW_RATE_SMAX    15.00000
 
 # Not in used, leave here for consistency
 # Heading control is all handled by L1 to compute yaw rate directly
