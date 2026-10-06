@@ -27,7 +27,7 @@ public:
 
     // setup a one loop FF scale multiplier. This replaces any previous scale applied
     // so should only be used when only one source of scaling is needed
-    // preserved this for backward compatibility
+    // NOT IN USED ANYMORE
     void set_ff_scale(float _ff_scale) { ff_scale = _ff_scale; }
 
     // reset I gain only
