@@ -570,7 +570,7 @@ void Plane::update_flight_stage(void)
 {
     // TODO: review this flight stage logic for torp AUV
     // Update the speed & height controller states
-    if (control_mode->does_auto_throttle() && !throttle_suppressed) {
+    if (control_mode->does_auto_throttle()) {
         if (control_mode == &mode_auto) {
 #if HAL_QUADPLANE_ENABLED
             if (quadplane.in_vtol_auto()) {
