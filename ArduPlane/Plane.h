@@ -435,6 +435,7 @@ private:
         uint32_t start_time_ms;
         bool waiting_for_rudder_neutral;
         bool loiter_to_takeoff; // if the next wp is too near to starting point, we will keep loitering around this point until reaching target alt
+        bool has_reached_required_takeoff_speed;
     } takeoff_state;
 
     // ground steering controller state

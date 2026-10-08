@@ -140,7 +140,7 @@ void Plane::update_takeoff(void)
     calc_nav_roll();
     calc_nav_yaw_rate();
 
-    if (get_forward_speed() < mode_takeoff.takeoff_speed * 0.9f) {
+    if (get_forward_speed() < mode_takeoff.takeoff_speed * 0.9f && !takeoff_state.has_reached_required_takeoff_speed) {
         // When we have not reached the minimum takeoff speed, use the ground pitch demand
         // However, if our speed is even below TKOFF_TDRAG_SPD1, we use manual elevator control (refer to plane.stabilize_pitch())
         nav_pitch_cd = int32_t(100.0f * mode_takeoff.ground_pitch);
@@ -148,6 +148,7 @@ void Plane::update_takeoff(void)
         // Pitch command from mission is the maximum allowable pitch during takeoff (may not always be the desired pitch)
         calc_nav_pitch();
         nav_pitch_cd = (abs(nav_pitch_cd) < abs(auto_state.takeoff_pitch_cd)) ? nav_pitch_cd : auto_state.takeoff_pitch_cd;
+        takeoff_state.has_reached_required_takeoff_speed = true;
     }
 }
 
