@@ -162,28 +162,22 @@ float AP_AttitudeController::get_rate_out(float desired_rate, float scaler, bool
     const float rate = _measured_rate();
     desired_rate = _limit_rate(desired_rate);
 
-    // the P and I elements are scaled by sq(scaler). To use an
-    // unmodified AC_PID object we scale the inputs and calculate FF separately
-    //
-    // note that we run AC_PID in radians so that the normal scaling
-    // range for IMAX in AC_PID applies (usually an IMAX value less than 1.0)
-    rate_pid.update_all(radians(desired_rate) * scaler * scaler, rate * scaler * scaler, dt, limit_I);
-
-    // FF should be scaled by scaler, but since we have scaled
-    // the AC_PID target above by scaler*scaler we need to instead
-    // divide by scaler to get the right scaling
-    const float ff = degrees(ff_scale * rate_pid.get_ff() / scaler);
-    ff_scale = 1.0;
-
+    // Even though hydrodynamic forces by control surfaces and initial angular acceleration scales quadratically with velocity,
+    // hydrodynamic damping only scales linearly with velocity.
+    // If we scale down the PID terms by sq(speed), the system will be underdamped at higher speed and start to oscillate without convergence.
+    // From testing in simulation, scaling both PID and FF linearly by speed scaler gives very stable and robust control across a range of speeds.
+    rate_pid.update_all(radians(desired_rate) * scaler, rate * scaler, dt, limit_I);
+   
     if (disable_integrator) {
         rate_pid.reset_I();
     }
-
+    
     // convert AC_PID info object to same scale as old controller
     _pid_info = rate_pid.get_pid_info();
     auto &pinfo = _pid_info;
-
+    
     const float deg_scale = degrees(1);
+    const float ff = degrees(rate_pid.get_ff());
     pinfo.FF = ff;
     pinfo.P *= deg_scale;
     pinfo.I *= deg_scale;
@@ -197,7 +191,7 @@ float AP_AttitudeController::get_rate_out(float desired_rate, float scaler, bool
     pinfo.error = pinfo.target - pinfo.actual;
 
     // sum components
-    float out = pinfo.FF + pinfo.P + pinfo.I + pinfo.D + pinfo.DFF;
+    float out = pinfo.FF + pinfo.P + pinfo.I + pinfo.D;
 
     // remember the last output to trigger the I limit
     _last_out = out;

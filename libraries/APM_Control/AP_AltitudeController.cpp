@@ -12,7 +12,7 @@ const AP_Param::GroupInfo AP_AltitudeController::var_info[] = {
     // @Param: CTRL_P
     // @DisplayName: Altitude controller P gain
     // @Description: Altitude controller P gain. Converts the altitude error (meters) into a desired pitch angle (radians)
-    // @Range: 0.1 0.3
+    // @Range: 0.05 0.2
     // @User: Standard
 
     // @Param: CTRL_I
@@ -21,19 +21,32 @@ const AP_Param::GroupInfo AP_AltitudeController::var_info[] = {
     // @Range: 0.001 0.1
     // @User: Standard
 
+    // @Param: CTRL_D
+    // @DisplayName: Altitude controller D gain
+    // @Description: Altitude controller D gain. Reacts to the rate of change of the altitude error (meters/second) to provide damping
+    // @Range: 0.01 0.2
+    // @User: Standard
+
     // @Param: CTRL_IMAX
     // @DisplayName: Altitude controller I maximum
     // @Description: Maximum value for the integral term (radians) to prevent windup
     // @Range: 0.1 0.2
     // @User: Standard
-    AP_SUBGROUPINFO(_pid_alt, "CTRL_", 0, AP_AltitudeController, AC_PI),
+    AP_SUBGROUPINFO(_pid_alt, "CTRL_", 0, AP_AltitudeController, AC_PID),
 
-    // @Param: BUOY_FF
+    // @Param: RES_ERROR
+    // @DisplayName: Altitude residual error
+    // @Description: Residual error in altitude control (meters). This is the magnitude of  altitude error at which I gain will be enabled. Outside of this, I term will not be unwind, but also will not accumulate. Should be positive value.
+    // @Increment: 0.01
+    // @User: Standard
+    AP_GROUPINFO("RES_ERROR", 1, AP_AltitudeController, _res_error, 1.0f),
+
+    // @Param: BUOYANCY_FF
     // @DisplayName: Buoyancy feedforward pitch angle (degrees)
-    // @Description: Pitch down angle to counteract buoyancy (degrees) at typical operating speed (SCALING_SPEED)
+    // @Description: Pitch angle to counteract buoyancy (degrees) at typical operating speed (SCALING_SPEED). Should be negative number.
     // @Increment: 1.0
     // @User: Standard
-    AP_GROUPINFO("BUOYANCY_FF", 1, AP_AltitudeController, _buoyancy_ff_deg, 5.0f),
+    AP_GROUPINFO("BUOYANCY_FF", 2, AP_AltitudeController, _buoyancy_ff_deg, -2.0f),
 
     AP_GROUPEND
 };
@@ -60,17 +73,28 @@ void AP_AltitudeController::update(float target_alt_cm, float current_alt_cm, fl
         dt = 0.02f;  // Assume 50Hz update rate
     }
 
-    // Update PI controller with altitude error (note that the arguments is measurement followed by target, different from AC_PID class)
-    // PI input is altitude in meters, output is desired pitch in radians
-    float pitch_rad = _pid_alt.update(current_alt_cm * 0.01f, target_alt_cm * 0.01f, dt);
+    const float target_alt = target_alt_cm * 0.01f;
+    const float current_alt = current_alt_cm * 0.01f;
+    const float res_error = _res_error.get();
+    const bool limit_I = res_error > 0.0f && fabsf(target_alt - current_alt) > res_error;
 
-    // Actual feedforward pitch is dependent on speed; the higher speed, the lower pitch ff needed
-    // speed_scaler = g.scaling_speed / current_speed, so we multiply by speed_scaler to adjust for current speed
-    pitch_rad -= radians(_buoyancy_ff_deg) * speed_scaler;
+    // Update PID controller with altitude error
+    // PID input is altitude in meters, output is desired pitch in radians
+    // Pitch control is scaled by the speed factor
+    float pitch_rad = _pid_alt.update_all(target_alt * speed_scaler, current_alt * speed_scaler, dt, limit_I);
+
+    // Default feedforward pitch adjustment based on buoyancy (aka disturbance feedforward)
+    // Notice that we do not use any built-in FF (aka setpoint feedforward) because it does not make sense
+    if (fabsf(_buoyancy_ff_deg) > 0.1f) {
+        pitch_rad += radians(_buoyancy_ff_deg) * speed_scaler;
+    }
 
     // Convert to centidegrees
     _desired_pitch_cd = degrees(pitch_rad) * 100.0f;
 
     // For logging purpose
     _pid_info = _pid_alt.get_pid_info();
+    _pid_info.target = target_alt;
+    _pid_info.actual = current_alt;
+    _pid_info.error = _pid_info.target - _pid_info.actual;
 }

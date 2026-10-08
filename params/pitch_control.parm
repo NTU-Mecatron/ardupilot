@@ -3,11 +3,22 @@ PTCH_LIM_MAX_DEG 20.000000
 PTCH_LIM_MIN_DEG -20.000000
 
 # PI controller: altitude -> pitch
-# BUOYANCY_FF: Pitch down angle (degrees) to counteract buoyancy at typical operating speed (SCALING_SPEED)
-ALT_CTRL_P       0.100
-ALT_CTRL_I       0.0100
+ALT_CTRL_P       0.07000
+ALT_CTRL_I       0.00800
+ALT_CTRL_D       0.15000
 ALT_CTRL_IMAX    0.07000
-ALT_BUOYANCY_FF  0.000000
+
+# Residual error (m) between target and actual altitude when integral gain will accumulate. Should be 0.1 to 1.5.
+ALT_RES_ERROR    1.00000
+
+# BUOYANCY_FF: Pitch angle (degrees) to counteract buoyancy at typical operating speed (SCALING_SPEED). Should be negative number. This number will be auto scaled with speed.
+ALT_BUOYANCY_FF  -2.0000
+
+ALT_CTRL_FLTD    0.200000
+ALT_CTRL_FLTE    0.000000
+ALT_CTRL_FLTT    5.000000
+ALT_CTRL_PDMX    0.300000
+ALT_CTRL_SMAX    0.000000
 
 # P controller: pitch_rate = pitch_error / tconst
 PTCH_TCONST      1.0000
@@ -15,17 +26,17 @@ PTCH_MAX_RATE    20
 
 # Pitch rate to elevator PID
 PTCH_RATE_P      4.00000
-PTCH_RATE_I      0.06000
-PTCH_RATE_D      0.000000
-PTCH_RATE_IMAX   0.070000
-PTCH_RATE_FF     3.0
+PTCH_RATE_I      0.20000
+PTCH_RATE_D      4.000000
+PTCH_RATE_IMAX   0.260000
+PTCH_RATE_FF     0.8
 
 PTCH_RATE_D_FF   0.000000
-PTCH_RATE_FLTD   0.000000
-PTCH_RATE_FLTE   0.000000
-PTCH_RATE_FLTT   5.000000
+PTCH_RATE_FLTD   0.200000
+PTCH_RATE_FLTE   1.000000
+PTCH_RATE_FLTT   0.000000
 PTCH_RATE_NEF    0
 PTCH_RATE_NTF    0
 PTCH_RATE_PDMX   0.260000
-PTCH_RATE_SMAX   150.000000
+PTCH_RATE_SMAX   15.000000
 PTCH_TRIM_DEG    0.000000

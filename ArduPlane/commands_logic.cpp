@@ -409,6 +409,7 @@ void Plane::do_takeoff(const AP_Mission::Mission_Command& cmd)
     steer_state.hold_course_cd = -1;
     auto_state.baro_takeoff_alt = barometer.get_altitude();
     takeoff_state.loiter_to_takeoff = false;
+    takeoff_state.has_reached_required_takeoff_speed = false;
 }
 
 void Plane::do_nav_wp(const AP_Mission::Mission_Command& cmd)

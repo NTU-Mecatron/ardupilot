@@ -2,7 +2,7 @@
 
 #include <AP_Common/AP_Common.h>
 #include <AP_Param/AP_Param.h>
-#include <AC_PID/AC_PI.h>
+#include <AC_PID/AC_PID.h>
 #include <AP_Math/AP_Math.h>
 #include <AP_AHRS/AP_AHRS.h>
 
@@ -35,12 +35,11 @@ public:
     const AP_PIDInfo& get_pid_info(void) const { return _pid_info; }
 
 private:
-    // Default PI controller with IMAX, estimated with 1m error == 10 deg pitch, I_gain capped at 10 deg
-    AC_PI _pid_alt{0.175f, 0.025f, 0.175f};
+    AC_PID _pid_alt{0.1, 0.005, 0.05, 0.0, 0.07, 5.0, 0.0, 1.0};
 
     // Parameters
     AP_Float _buoyancy_ff_deg;             // Buoyancy feedforward term (degrees)
-    AP_Float _pitch_max;               // Maximum pitch angle (degrees)
+    AP_Float _res_error;               // Residual error in altitude control (meters) to enable I gain
 
     // State variables
     int32_t _desired_pitch_cd;          // Desired pitch angle in centidegrees
