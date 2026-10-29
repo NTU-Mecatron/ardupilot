@@ -166,6 +166,12 @@ void Sub::fifty_hz_loop()
     failsafe_rc_check();
     rc().read_mode_switch();
     rc().read_aux_all();
+
+    // an emergency stop holds the thrusters stopped by keeping the vehicle disarmed
+    if (SRV_Channels::get_emergency_stop() && motors.armed()) {
+        arming.disarm(AP_Arming::Method::AUXSWITCH);
+    }
+
     g2.actuators.update_actuators();
 }
 

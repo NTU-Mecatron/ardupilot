@@ -9,6 +9,7 @@
 #   CH6  Ail  right stick horizontal -> lateral
 #   CH9  SA   arm (high) / disarm (low), must be toggled once after boot before it will arm
 #   CH10 SB   flight mode: up = Manual, middle = Stabilize, down = Depth Hold
+#   CH11 SD   emergency stop (high): disarms in any mode, and nothing (RC or MAVROS) can arm until it is released
 # Use an ELRS "Full" packet rate (e.g. 333Hz Full, switch mode 16ch Rate/2) so CH5/CH6 are full resolution
 # The receiver failsafe must stop sending frames on link loss (ELRS default over CRSF)
 #
@@ -25,6 +26,7 @@ RC_FS_TIMEOUT    1.0
 
 # Switches
 RC9_OPTION       153
+RC11_OPTION      31
 FLTMODE_CH       10
 FLTMODE1         19
 FLTMODE2         19

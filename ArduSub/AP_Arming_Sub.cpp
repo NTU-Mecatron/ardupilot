@@ -67,6 +67,14 @@ bool AP_Arming_Sub::arm(AP_Arming::Method method, bool do_arming_checks)
 
     in_arm_motors = true;
 
+    // an emergency stop refuses every arm request, including forced ones
+    if (SRV_Channels::get_emergency_stop()) {
+        check_failed(true, "Motors Emergency Stopped");
+        AP_Notify::events.arming_failed = true;
+        in_arm_motors = false;
+        return false;
+    }
+
     if (!AP_Arming::arm(method, do_arming_checks)) {
         AP_Notify::events.arming_failed = true;
         in_arm_motors = false;
