@@ -163,6 +163,9 @@ void Sub::fifty_hz_loop()
     failsafe_sensors_check();
 
     rc().read_input();
+    failsafe_rc_check();
+    rc().read_mode_switch();
+    rc().read_aux_all();
     g2.actuators.update_actuators();
 }
 

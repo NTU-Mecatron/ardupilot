@@ -9,7 +9,15 @@ public:
 
 protected:
 
+    void mode_switch_changed(modeswitch_pos_t new_pos) override;
+    bool do_aux_function(aux_func_t ch_option, AuxSwitchPos) override;
+
 private:
+
+    // the first switch positions read from the receiver are treated specially,
+    // see mode_switch_changed() and do_aux_function()
+    bool mode_switch_seen;
+    bool arm_switch_seen;
 
 };
 
@@ -27,6 +35,9 @@ public:
 
     // tell the gimbal code all is good with RC input:
     bool in_rc_failsafe() const override { return false; };
+
+    // true while frames are arriving from a directly attached receiver
+    bool has_valid_input() const override;
 
 protected:
 

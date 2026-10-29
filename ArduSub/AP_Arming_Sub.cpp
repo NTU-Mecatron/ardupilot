@@ -17,6 +17,9 @@ bool AP_Arming_Sub::has_disarm_function() const {
         sub.jsbutton_function_is_assigned(JSButton::k_disarm)) {
         return true;
     }
+    if (rc().find_channel_for_option(RC_Channel::AUX_FUNC::ARMDISARM) != nullptr) {
+        return true;
+    }
     return false;
 }
 

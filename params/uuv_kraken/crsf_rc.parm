@@ -1,0 +1,55 @@
+# RadioMaster / ELRS receiver over CRSF, wired to TELEM3 (SERIAL5) on the Pixhawk 6C
+# Needs the Mecatron firmware with RC switch support (FLTMODE_CH, FLTMODE1-6 and the RC link failsafe)
+#
+# Radio mixer (Mode 2 sticks):
+#   CH1, CH2  empty (sit at 1500, unused roll/pitch)
+#   CH3  Thr  left stick vertical    -> up/down (centre = no vertical thrust / hold depth)
+#   CH4  Rud  left stick horizontal  -> yaw
+#   CH5  Ele  right stick vertical   -> forward/back
+#   CH6  Ail  right stick horizontal -> lateral
+#   CH9  SA   arm (high) / disarm (low), must be toggled once after boot before it will arm
+#   CH10 SB   flight mode: up = Manual, middle = Stabilize, down = Depth Hold
+# Use an ELRS "Full" packet rate (e.g. 333Hz Full, switch mode 16ch Rate/2) so CH5/CH6 are full resolution
+# The receiver failsafe must stop sending frames on link loss (ELRS default over CRSF)
+#
+# On RC link loss (after RC_FS_TIMEOUT seconds) the sticks go to neutral, and the vehicle
+# disarms unless it is in Guided. Nothing happens if no receiver has been seen since boot.
+
+# CRSF receiver on TELEM3
+SERIAL5_PROTOCOL 23
+RC_PROTOCOLS     1
+# 32 arming throttle check (existing), 512 suppress ELRS rate message, 8192 ELRS 420kbaud
+RC_OPTIONS       8736
+RSSI_TYPE        3
+RC_FS_TIMEOUT    1.0
+
+# Switches
+RC9_OPTION       153
+FLTMODE_CH       10
+FLTMODE1         19
+FLTMODE2         19
+FLTMODE3         0
+FLTMODE4         0
+FLTMODE5         2
+FLTMODE6         2
+
+# CRSF channel range is 988-2012
+RC1_MIN          988
+RC1_MAX          2012
+RC1_TRIM         1500
+RC2_MIN          988
+RC2_MAX          2012
+RC2_TRIM         1500
+# throttle trim must equal its minimum, Sub treats the stick centre as neutral
+RC3_MIN          988
+RC3_MAX          2012
+RC3_TRIM         988
+RC4_MIN          988
+RC4_MAX          2012
+RC4_TRIM         1500
+RC5_MIN          988
+RC5_MAX          2012
+RC5_TRIM         1500
+RC6_MIN          988
+RC6_MAX          2012
+RC6_TRIM         1500

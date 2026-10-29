@@ -390,6 +390,10 @@ public:
     AP_Float backup_origin_alt;
     Actuators actuators;
 
+    // RC flight mode switch
+    AP_Int8 flight_mode_chan;
+    AP_Int8 flight_modes[6];
+
 };
 
 extern const AP_Param::Info        var_info[];
