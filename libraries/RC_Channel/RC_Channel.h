@@ -567,6 +567,9 @@ public:
 
     uint32_t last_input_ms() const { return last_update_ms; };
 
+    // time of the last frame from a directly attached receiver, does not include overrides
+    uint32_t last_receiver_input_ms() const { return last_receiver_update_ms; }
+
     // method for other parts of the system (e.g. Button and mavlink)
     // to trigger auxiliary functions
     bool run_aux_function(RC_Channel::AUX_FUNC ch_option, RC_Channel::AuxSwitchPos pos, RC_Channel::AuxFuncTriggerSource source) {
@@ -605,6 +608,7 @@ private:
     static RC_Channel *channels;
 
     uint32_t last_update_ms;
+    uint32_t last_receiver_update_ms;
     bool has_new_overrides;
     bool _has_had_rc_receiver; // true if we have had a direct detach RC receiver, does not include overrides
     bool _has_had_override; // true if we have had an override on any channel

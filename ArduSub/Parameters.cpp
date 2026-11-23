@@ -750,6 +750,50 @@ const AP_Param::GroupInfo ParametersG2::var_info[] = {
     // @Path: ../ArduSub/actuators.cpp
     AP_SUBGROUPINFO(actuators, "ACTUATOR", 23, ParametersG2, Actuators),
 
+    // @Param: FLTMODE_CH
+    // @DisplayName: Flightmode channel
+    // @Description: RC Channel to use for flight mode control. Only used with a directly attached RC receiver, 0 disables the mode switch
+    // @Values: 0:Disabled,5:Channel5,6:Channel6,7:Channel7,8:Channel8,9:Channel9,10:Channel10,11:Channel11,12:Channel12,13:Channel13,14:Channel14,15:Channel15,16:Channel16
+    // @User: Advanced
+    AP_GROUPINFO("FLTMODE_CH", 24, ParametersG2, flight_mode_chan, 0),
+
+    // @Param: FLTMODE1
+    // @DisplayName: Flight Mode 1
+    // @Description: Flight mode when pwm of Flightmode channel(FLTMODE_CH) is <= 1230
+    // @Values: 0:Stabilize,1:Acro,2:Depth Hold,3:Auto,4:Guided,7:Circle,9:Surface,16:Position Hold,19:Manual,21:Surftrak
+    // @User: Standard
+    AP_GROUPINFO("FLTMODE1", 25, ParametersG2, flight_modes[0], (uint8_t)Mode::Number::MANUAL),
+
+    // @Param: FLTMODE2
+    // @CopyFieldsFrom: FLTMODE1
+    // @DisplayName: Flight Mode 2
+    // @Description: Flight mode when pwm of Flightmode channel(FLTMODE_CH) is >1230, <= 1360
+    AP_GROUPINFO("FLTMODE2", 26, ParametersG2, flight_modes[1], (uint8_t)Mode::Number::MANUAL),
+
+    // @Param: FLTMODE3
+    // @CopyFieldsFrom: FLTMODE1
+    // @DisplayName: Flight Mode 3
+    // @Description: Flight mode when pwm of Flightmode channel(FLTMODE_CH) is >1360, <= 1490
+    AP_GROUPINFO("FLTMODE3", 27, ParametersG2, flight_modes[2], (uint8_t)Mode::Number::STABILIZE),
+
+    // @Param: FLTMODE4
+    // @CopyFieldsFrom: FLTMODE1
+    // @DisplayName: Flight Mode 4
+    // @Description: Flight mode when pwm of Flightmode channel(FLTMODE_CH) is >1490, <= 1620
+    AP_GROUPINFO("FLTMODE4", 28, ParametersG2, flight_modes[3], (uint8_t)Mode::Number::STABILIZE),
+
+    // @Param: FLTMODE5
+    // @CopyFieldsFrom: FLTMODE1
+    // @DisplayName: Flight Mode 5
+    // @Description: Flight mode when pwm of Flightmode channel(FLTMODE_CH) is >1620, <= 1749
+    AP_GROUPINFO("FLTMODE5", 29, ParametersG2, flight_modes[4], (uint8_t)Mode::Number::ALT_HOLD),
+
+    // @Param: FLTMODE6
+    // @CopyFieldsFrom: FLTMODE1
+    // @DisplayName: Flight Mode 6
+    // @Description: Flight mode when pwm of Flightmode channel(FLTMODE_CH) is >=1750
+    AP_GROUPINFO("FLTMODE6", 30, ParametersG2, flight_modes[5], (uint8_t)Mode::Number::ALT_HOLD),
+
     AP_GROUPEND
 };
 
