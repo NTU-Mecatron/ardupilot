@@ -198,6 +198,49 @@ void Sub::failsafe_pilot_input_check()
 #endif
 }
 
+// Check that a directly attached RC receiver is still sending frames
+void Sub::failsafe_rc_check()
+{
+    // only once a receiver has been seen, so the vehicle can still be run from MAVLink alone
+    if (!rc().has_had_rc_receiver()) {
+        return;
+    }
+
+    const uint32_t last_receiver_ms = rc().last_receiver_input_ms();
+    if (AP_HAL::millis() - last_receiver_ms < rc().get_fs_timeout_ms()) {
+        // receiver frames count as pilot input, like joystick messages do
+        failsafe.last_pilot_input_ms = last_receiver_ms;
+        if (failsafe.rc_input) {
+            failsafe.rc_input = false;
+            LOGGER_WRITE_ERROR(LogErrorSubsystem::FAILSAFE_RADIO, LogErrorCode::FAILSAFE_RESOLVED);
+            gcs().send_text(MAV_SEVERITY_INFO, "RC link restored");
+        }
+        return;
+    }
+
+    if (!failsafe.rc_input) {
+        failsafe.rc_input = true;
+        LOGGER_WRITE_ERROR(LogErrorSubsystem::FAILSAFE_RADIO, LogErrorCode::FAILSAFE_OCCURRED);
+        gcs().send_text(MAV_SEVERITY_CRITICAL, "RC link lost");
+    }
+
+    // the receiver keeps its last values, so hold the pilot controls at neutral
+    // rather than latching them. Overrides from a joystick or MAVLink still win
+    for (uint8_t i = 0; i < 6; i++) {
+        RC_Channel *c = rc().channel(i);
+        if (c->has_override()) {
+            continue;
+        }
+        c->set_radio_in(1500);
+        c->set_control_in(c->get_control_mid());
+    }
+
+    // guided is driven by the companion computer, so it carries on without RC
+    if (motors.armed() && control_mode != Mode::Number::GUIDED) {
+        arming.disarm(AP_Arming::Method::RADIOFAILSAFE);
+    }
+}
+
 // Internal pressure failsafe check
 // Check if the internal pressure of the watertight electronics enclosure
 // has exceeded the maximum specified by the FS_PRESS_MAX parameter

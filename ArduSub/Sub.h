@@ -111,6 +111,7 @@ public:
     friend class ParametersG2;
     friend class AP_Arming_Sub;
     friend class RC_Channels_Sub;
+    friend class RC_Channel_Sub;
     friend class Mode;
     friend class ModeManual;
     friend class ModeStabilize;
@@ -238,10 +239,11 @@ private:
         uint8_t internal_temperature : 1; // true if temperature is over threshold
         uint8_t crash                : 1; // true if we are crashed
         uint8_t sensor_health        : 1; // true if at least one sensor has triggered a failsafe (currently only used for depth in depth enabled modes)
+        uint8_t rc_input             : 1; // true if a directly attached RC receiver has stopped sending frames
     } failsafe;
 
     bool any_failsafe_triggered() const {
-        return (failsafe.pilot_input || battery.has_failsafed() || failsafe.gcs || failsafe.ekf || failsafe.terrain);
+        return (failsafe.pilot_input || failsafe.rc_input || battery.has_failsafed() || failsafe.gcs || failsafe.ekf || failsafe.terrain);
     }
 
     // sensor health for logging
@@ -443,6 +445,7 @@ private:
     void handle_battery_failsafe(const char* type_str, const int8_t action);
     void failsafe_gcs_check();
     void failsafe_pilot_input_check(void);
+    void failsafe_rc_check(void);
     void set_neutral_controls(void);
     void failsafe_terrain_check();
     void failsafe_terrain_set_status(bool data_ok);
