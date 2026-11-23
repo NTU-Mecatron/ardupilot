@@ -95,7 +95,7 @@ bool Sub::set_mode(Mode::Number mode, ModeReason reason)
 
     // check for valid altitude if old mode did not require it but new one does
     // we only want to stop changing modes if it could make things worse
-    if (!sub.control_check_barometer() && // maybe use ekf_alt_ok() instead?
+    if (!sub.alt_estimate_ok() &&
         flightmode->has_manual_throttle() &&
         !new_flightmode->has_manual_throttle()) {
         gcs().send_text(MAV_SEVERITY_WARNING, "Mode change failed: %s need alt estimate", new_flightmode->name());
